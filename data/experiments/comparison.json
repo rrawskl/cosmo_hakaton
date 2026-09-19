@@ -1,0 +1,160 @@
+{
+  "algorithm_version": "2.2.1",
+  "cases": {
+    "storm": {
+      "source": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/05/202405101230three_day_forecast.txt",
+      "cutoff": "2024-05-10T12:30:00+00:00",
+      "forecast_sha256_lf": "bfa0e470d421690a1213d51005b59e9f9522a6f3cbeb1c90e7df814f073651a3",
+      "windows": [
+        {
+          "start": "2024-05-10T13:00:00+00:00",
+          "end": "2024-05-10T19:00:00+00:00",
+          "kp_max": 4.33,
+          "kp_ge5_minutes": 0,
+          "s1_probability_max": 55.0,
+          "r1_r2_probability_max": 95.0,
+          "r3_probability_max": 75.0,
+          "weather_status": "attention",
+          "proton_status": "attention"
+        },
+        {
+          "start": "2024-05-10T19:00:00+00:00",
+          "end": "2024-05-11T01:00:00+00:00",
+          "kp_max": 5.33,
+          "kp_ge5_minutes": 240.0,
+          "s1_probability_max": 55.0,
+          "r1_r2_probability_max": 95.0,
+          "r3_probability_max": 75.0,
+          "weather_status": "attention",
+          "proton_status": "attention"
+        },
+        {
+          "start": "2024-05-11T01:00:00+00:00",
+          "end": "2024-05-11T07:00:00+00:00",
+          "kp_max": 8.33,
+          "kp_ge5_minutes": 360.0,
+          "s1_probability_max": 55.0,
+          "r1_r2_probability_max": 95.0,
+          "r3_probability_max": 75.0,
+          "weather_status": "attention",
+          "proton_status": "attention"
+        }
+      ],
+      "recommendation": {
+        "status": "equal",
+        "winner": null,
+        "reason": "Все окна равны по критериям сравнения. Это не означает одинаковые значения прогнозов или отсутствие риска. Суточные вероятности не определяют время события внутри суток.",
+        "window_status": "attention",
+        "confidence": "source_forecast",
+        "available_findings": [
+          "Протонная обстановка: attention",
+          "Космическая погода: attention"
+        ],
+        "missing_factors": [],
+        "current_proton_status": null,
+        "best_indices": [
+          0,
+          1,
+          2
+        ],
+        "comparison_scores": [
+          {
+            "has_adverse": false,
+            "adverse_factor_minutes": 0,
+            "attention_factor_minutes": 720.0
+          },
+          {
+            "has_adverse": false,
+            "adverse_factor_minutes": 0,
+            "attention_factor_minutes": 720.0
+          },
+          {
+            "has_adverse": false,
+            "adverse_factor_minutes": 0,
+            "attention_factor_minutes": 720.0
+          }
+        ]
+      }
+    },
+    "control": {
+      "source": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/05/202405011230three_day_forecast.txt",
+      "cutoff": "2024-05-01T12:30:00+00:00",
+      "forecast_sha256_lf": "f3ad61df2b46e0d83d4b507411056c30677038d02122b6d656079cb69753cb47",
+      "windows": [
+        {
+          "start": "2024-05-01T13:00:00+00:00",
+          "end": "2024-05-01T19:00:00+00:00",
+          "kp_max": 3.0,
+          "kp_ge5_minutes": 0,
+          "s1_probability_max": 5.0,
+          "r1_r2_probability_max": 55.0,
+          "r3_probability_max": 10.0,
+          "weather_status": "attention",
+          "proton_status": "attention"
+        },
+        {
+          "start": "2024-05-01T19:00:00+00:00",
+          "end": "2024-05-02T01:00:00+00:00",
+          "kp_max": 3.67,
+          "kp_ge5_minutes": 0,
+          "s1_probability_max": 5.0,
+          "r1_r2_probability_max": 55.0,
+          "r3_probability_max": 10.0,
+          "weather_status": "attention",
+          "proton_status": "attention"
+        },
+        {
+          "start": "2024-05-02T01:00:00+00:00",
+          "end": "2024-05-02T07:00:00+00:00",
+          "kp_max": 4.0,
+          "kp_ge5_minutes": 0,
+          "s1_probability_max": 5.0,
+          "r1_r2_probability_max": 45.0,
+          "r3_probability_max": 10.0,
+          "weather_status": "attention",
+          "proton_status": "attention"
+        }
+      ],
+      "recommendation": {
+        "status": "equal",
+        "winner": null,
+        "reason": "Все окна равны по критериям сравнения. Это не означает одинаковые значения прогнозов или отсутствие риска. Суточные вероятности не определяют время события внутри суток.",
+        "window_status": "attention",
+        "confidence": "source_forecast",
+        "available_findings": [
+          "Протонная обстановка: attention",
+          "Космическая погода: attention"
+        ],
+        "missing_factors": [],
+        "current_proton_status": null,
+        "best_indices": [
+          0,
+          1,
+          2
+        ],
+        "comparison_scores": [
+          {
+            "has_adverse": false,
+            "adverse_factor_minutes": 0,
+            "attention_factor_minutes": 720.0
+          },
+          {
+            "has_adverse": false,
+            "adverse_factor_minutes": 0,
+            "attention_factor_minutes": 720.0
+          },
+          {
+            "has_adverse": false,
+            "adverse_factor_minutes": 0,
+            "attention_factor_minutes": 720.0
+          }
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "NOAA is the upstream forecast, not an independent competing model.",
+    "No EVA dose or GO/NO-GO validation; these are forecast-window calculations.",
+    "No historical GOES observations or orbital geometry are used in this isolated factor comparison."
+  ]
+}

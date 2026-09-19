@@ -6,6 +6,56 @@
 
 [Руководство пользователя: параметры, экраны и результаты](docs/USER_GUIDE.md).
 [Аудит формул и границ прогноза, версия 2.2.0](docs/MODEL_AUDIT.md).
+[Сравнение с NOAA на исторических данных](docs/HISTORICAL_COMPARISON.md).
+
+## Быстрый запуск из чистой копии (2.2.1)
+
+Нужны Git, Python 3.12, Node.js 22.13+ и интернет для установки зависимостей
+и загрузки источников. Используйте обычную сборку Python, не Python из MSYS.
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/rrawskl/cosmo_hakaton.git
+cd cosmo_hakaton
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+npm install --global pnpm@11.19.0
+pnpm --dir frontend install --frozen-lockfile
+.\.venv\Scripts\python.exe scripts/run_local.py --build
+```
+
+Linux / macOS:
+
+```bash
+git clone https://github.com/rrawskl/cosmo_hakaton.git
+cd cosmo_hakaton
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+test -f .env || cp .env.example .env
+npm install --global pnpm@11.19.0
+pnpm --dir frontend install --frozen-lockfile
+.venv/bin/python scripts/run_local.py --build
+```
+
+На Debian/Ubuntu для venv и PDF установите `python3.12-venv fonts-dejavu-core`.
+На macOS используется системный Arial; если его нет, задайте `PDF_FONT_PATH`
+в `.env` к установленному TTF с кириллицей. Для глобальной установки pnpm
+нужен доступ к каталогу npm; используйте Node.js, установленный для вашего пользователя.
+
+Открыть http://127.0.0.1:3000. Скрипт выполняет миграции, сборку и запускает оба
+сервера; Ctrl+C останавливает их. Порты 3000 и 8000 должны быть свободны.
+Для следующего запуска используйте последнюю команду без `--build`;
+после обновления проекта запускайте с `--build` и обновляйте зависимости.
+Отсутствие ключей не мешает запуску: NOAA публичный. Space-Track нужен для
+исторической и резервной текущей орбиты, NASA_API_KEY — для DONKI с большей квотой.
+Секреты заполняются только в локальном `.env`, не загружаются в Git.
+
+Проверка Windows из чистой копии описана в [VALIDATION](docs/VALIDATION.md).
+CI содержит проверки Windows/Linux/macOS и Docker; результаты доступны на
+[вкладке Actions](https://github.com/rrawskl/cosmo_hakaton/actions).
+Наличие конфигурации CI само по себе не означает успешное прохождение этих платформ.
 
 ## Архитектура
 
@@ -91,15 +141,15 @@ Stale — возраст измерения >30 минут (допуск на н
 
 Браузер использует те же пути с префиксом `/api`; Next.js проксирует на backend.
 Секреты доступны только backend. Дополнительно используются SWPC forecast,
-alerts/scales; NCEI dated bulletins; NASA DONKI SEP как контекст; CelesTrak ISS GP;
+alerts; NCEI dated bulletins; NASA DONKI SEP как контекст; CelesTrak ISS GP;
 Space-Track GP_HISTORY для исторической орбиты. Подробнее: [источники](docs/SOURCES.md).
 
 ## Требования
 
 Python 3.12; Node.js 22+; pnpm 11.19.0; Git. Для PDF: Arial на Windows либо
 DejaVu Sans на Linux. Docker Desktop с Compose нужен только для контейнерного
-варианта. NOAA и текущая орбита не требуют ключей. Space-Track нужен только для
-исторической орбиты. NASA DEMO_KEY доступен без регистрации с лимитами.
+варианта. NOAA и CelesTrak не требуют ключей. Space-Track нужен для
+исторической и резервной текущей орбиты. NASA DEMO_KEY доступен без регистрации с лимитами.
 
 ## Windows: пошаговый запуск PowerShell
 

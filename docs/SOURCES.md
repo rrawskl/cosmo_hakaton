@@ -3,11 +3,11 @@
 | Источник | Использование | Доступ |
 |---|---|---|
 | NOAA GOES primary/secondary integral-protons | 10/50/100 MeV, pfu, 6h/1d/3d/7d | Публичный HTTPS, без ключа |
-| NOAA SWPC 3-Day Forecast | Kp и R-прогноз, Issued | Публичный HTTPS |
-| NOAA SWPC alerts/scales | Предупреждения и контекст | Публичный HTTPS |
+| NOAA SWPC 3-Day Forecast | Kp, R- и S1-прогноз, Issued | Публичный HTTPS |
+| NOAA SWPC alerts | Предупреждения, сроки действия и отмена | Публичный HTTPS |
 | NOAA NCEI dated SWPC bulletins | Strict replay по Issued | Публичный HTTPS, есть пропуски |
 | CelesTrak GP OMM ISS 25544 | Текущая орбита SGP4 | Публичный HTTPS, TTL2ч |
-| Space-Track GP_HISTORY | Историческая орбита, CREATION_DATE | Локальные credentials; raw не публикуется |
+| Space-Track GP / GP_HISTORY | Резервная текущая / историческая орбита, CREATION_DATE | Локальные credentials; raw не публикуется |
 | NASA DONKI SEP | Контекст, не scoring | NASA_API_KEY, по умолчанию DEMO_KEY |
 
 Официальные описания:
@@ -27,3 +27,7 @@ secondary GOES-19; поля time_tag/satellite/energy/flux. Идентифика
 Каждый сырой ответ сохраняется с URL, SHA-256, временем получения, parser version.
 Fixtures manifest содержит происхождение тестовых копий; production их не читает.
 Исторические GOES за 2024 не поддержаны; NCEI-прогноз S1 не выдаётся за измерение.
+
+В 2.2.1 убрана загрузка noaa-scales.json: ответ не использовался расчётами.
+Официальное описание шкал остаётся методическим первоисточником порогов.
+Старые сохранённые расчёты и их доказательства не удаляются.

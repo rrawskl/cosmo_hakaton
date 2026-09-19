@@ -63,13 +63,6 @@
     "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
   },
   {
-    "file": "swpc_scales.txt",
-    "url": "https://services.swpc.noaa.gov/products/noaa-scales.json",
-    "retrieved_at": "2026-09-18T19:50:22.992800+00:00",
-    "sha256": "b4c59635370076e4785ef3f7b367902725a8bf7e71a370ffd15a441409f8b6c5",
-    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
-  },
-  {
     "file": "swpc_alerts.txt",
     "url": "https://services.swpc.noaa.gov/products/alerts.json",
     "retrieved_at": "2026-09-18",

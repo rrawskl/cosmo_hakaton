@@ -50,13 +50,6 @@ CATALOG = {
         ttl=1800,
         max_age=18 * 3600,
     ),
-    "swpc_scales": dict(
-        provider="NOAA SWPC",
-        product="NOAA S/G/R scales",
-        url="https://services.swpc.noaa.gov/products/noaa-scales.json",
-        ttl=300,
-        max_age=900,
-    ),
     "celestrak_gp": dict(
         provider="CelesTrak",
         product="GP OMM ISS 25544",
@@ -306,8 +299,6 @@ def fetch(source, url=None, params=None, client=None):
                         int(x.get("NORAD_CAT_ID", 0)) == 25544 for x in response.json()
                     ):
                         raise ValueError("ISS missing")
-                    if source == "swpc_scales" and "0" not in response.json():
-                        raise ValueError("Scales missing")
                     result = store_response(
                         source,
                         identity,
@@ -370,7 +361,6 @@ def current_sources():
         key: fetch(key)
         for key in [
             "swpc_forecast",
-            "swpc_scales",
             "celestrak_gp",
             "swpc_alerts",
         ]

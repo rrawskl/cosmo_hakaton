@@ -1,4 +1,23 @@
-# Проверки версии 2.2.0
+# Финальная проверка 2.2.1 — 19 сентября 2026
+
+- Убраны неиспользуемые запросы noaa-scales.json; NOAA alerts и GOES сохранены.
+- 120 backend-тестов, 4 Vitest прошли; production build/TypeScript и Ruff успешны.
+- Отдельная чистая копия без `.env`, пользовательской БД и существующих
+  зависимостей: создан новый venv, все pinned Python-пакеты скачаны и установлены,
+  pip check успешен. pnpm установил frontend по frozen lockfile (из кеша пакетов).
+  Миграции пустой SQLite, backend-тесты (119 на этом этапе), Vitest и build прошли.
+- Чистая копия запущена через scripts/run_local.py. Все 8 Playwright-сценариев
+  прошли за 19.1 с, включая живой NOAA и исторический replay.
+  JSON/PDF/offline reproduce проверены через HTTP. Без Space-Track историческая
+  орбита недоступна, прогнозные факторы рассчитаны; данные не подставляются.
+- Добавлен отдельный тест, что launcher не передаёт backend-секреты frontend.
+- Исторические расчёты воспроизводятся scripts/compare_historical.py;
+  численные результаты и границы сравнения — HISTORICAL_COMPARISON.md.
+- Добавлен CI для Windows/Linux/macOS и Docker/PostgreSQL. Локально Docker
+  отсутствует; до получения успешного результата Actions эти платформы
+  не считаются проверенными. Публичный сервер не предоставлен.
+
+## Предыдущая проверка 2.2.0
 
 19 сентября 2026: аудит формул и источников описан в [MODEL_AUDIT](MODEL_AUDIT.md).
 119 backend-тестов, 4 Vitest и 8 Playwright прошли; production build,

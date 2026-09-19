@@ -29,7 +29,6 @@ def test_future_issued_forecast_cannot_cover_window(client, monkeypatch):
         lambda: dict(
             swpc_forecast=forecast,
             celestrak_gp=None,
-            swpc_scales=None,
             swpc_alerts=None,
         ),
     )
@@ -137,7 +136,6 @@ def test_current_reproduction_never_uses_network(client, monkeypatch, with_orbit
         lambda: dict(
             swpc_forecast=forecast,
             celestrak_gp=orbit,
-            swpc_scales=None,
             swpc_alerts=None,
         ),
     )
@@ -221,7 +219,6 @@ def test_all_sources_failed_analysis_is_partial(client, monkeypatch):
             k: None
             for k in [
                 "swpc_forecast",
-                "swpc_scales",
                 "celestrak_gp",
             ]
         },

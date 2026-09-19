@@ -510,13 +510,9 @@ export default function Home() {
                 {s.provider}
                 {s.id === "swpc_forecast"
                   ? " / прогноз"
-                  : s.id === "swpc_protons"
-                    ? " / GOES"
-                    : s.id === "swpc_scales"
-                      ? " / SGR"
-                      : s.id.startsWith("protons_")
-                        ? ` / GOES ${s.id.includes("secondary") ? "secondary" : "primary"}`
-                        : ""}
+                  : s.id.startsWith("protons_")
+                    ? ` / GOES ${s.id.includes("secondary") ? "secondary" : "primary"} ${s.id.split("_").at(-1)}`
+                    : ""}
               </span>
             ))}
           </div>

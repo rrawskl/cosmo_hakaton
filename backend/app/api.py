@@ -168,7 +168,6 @@ def reproduce(identifier: str):
             key: by_source.get(key)
             for key in [
                 "swpc_forecast",
-                "swpc_scales",
                 "celestrak_gp",
                 "swpc_alerts",
             ]

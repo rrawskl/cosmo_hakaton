@@ -13,10 +13,11 @@ class Settings(BaseSettings):
     disabled_sources: str = ""
     frozen_sources: str = ""
     admin_token: str = ""
+    pdf_font_path: str = ""
     noaa_request_timeout_seconds: float = 10
     noaa_cache_ttl_seconds: int = 120
     proton_data_stale_minutes: int = 30
 
 
 settings = Settings()
-ALGORITHM_VERSION = "2.2.0"
+ALGORITHM_VERSION = "2.2.1"

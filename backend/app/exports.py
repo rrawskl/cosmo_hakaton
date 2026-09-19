@@ -7,16 +7,22 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from .config import settings
 
 
 def report(result):
     candidates = [
+        Path(settings.pdf_font_path) if settings.pdf_font_path else Path("__no_font__"),
         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
         Path("C:/Windows/Fonts/arial.ttf"),
+        Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
+        Path("/Library/Fonts/Arial.ttf"),
     ]
     font = next((p for p in candidates if p.is_file()), None)
     if font is None:
-        raise RuntimeError("Установите DejaVu Sans для кириллического PDF")
+        raise RuntimeError(
+            "Установите DejaVu Sans или задайте PDF_FONT_PATH к TTF с кириллицей"
+        )
     if "Orbital" not in pdfmetrics.getRegisteredFontNames():
         pdfmetrics.registerFont(TTFont("Orbital", str(font)))
     styles = getSampleStyleSheet()

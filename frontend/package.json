@@ -1,6 +1,10 @@
 {
   "name": "orbital-risk",
-  "version": "1.0.0",
+  "version": "2.2.1",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.13"
+  },
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
