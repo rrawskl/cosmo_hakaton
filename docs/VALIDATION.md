@@ -1,5 +1,12 @@
 # Финальная проверка 2.2.1 — 19 сентября 2026
 
+**GitHub Actions завершён успешно для кода 3af9121:** Windows, Linux,
+macOS (установка, миграции, backend/Vitest, сборка) и Docker/PostgreSQL
+(сборка контейнеров, запуск, health БД/API и frontend proxy).
+[Подтверждённый запуск CI](https://github.com/rrawskl/cosmo_hakaton/actions/runs/35439562291).
+Четыре архивных выпуска NOAA повторно скачаны; текст с нормализованными
+переносами строк совпал с локальными копиями сравнения.
+
 - Убраны неиспользуемые запросы noaa-scales.json; NOAA alerts и GOES сохранены.
 - 120 backend-тестов, 4 Vitest прошли; production build/TypeScript и Ruff успешны.
 - Отдельная чистая копия без `.env`, пользовательской БД и существующих
@@ -13,9 +20,8 @@
 - Добавлен отдельный тест, что launcher не передаёт backend-секреты frontend.
 - Исторические расчёты воспроизводятся scripts/compare_historical.py;
   численные результаты и границы сравнения — HISTORICAL_COMPARISON.md.
-- Добавлен CI для Windows/Linux/macOS и Docker/PostgreSQL. Локально Docker
-  отсутствует; до получения успешного результата Actions эти платформы
-  не считаются проверенными. Публичный сервер не предоставлен.
+- CI для Windows/Linux/macOS и Docker/PostgreSQL прошёл на GitHub.
+  Локально Docker отсутствует. Публичный сервер не предоставлен.
 
 ## Предыдущая проверка 2.2.0
 

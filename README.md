@@ -55,7 +55,8 @@ pnpm --dir frontend install --frozen-lockfile
 Проверка Windows из чистой копии описана в [VALIDATION](docs/VALIDATION.md).
 CI содержит проверки Windows/Linux/macOS и Docker; результаты доступны на
 [вкладке Actions](https://github.com/rrawskl/cosmo_hakaton/actions).
-Наличие конфигурации CI само по себе не означает успешное прохождение этих платформ.
+Для кода 3af9121 все проверки CI успешно пройдены:
+[Windows/Linux/macOS и Docker/PostgreSQL](https://github.com/rrawskl/cosmo_hakaton/actions/runs/35439562291).
 
 ## Архитектура
 
@@ -213,8 +214,8 @@ docker compose up --build -d
 Compose задаёт PostgreSQL URL и внутренний API URL самостоятельно; локальные
 значения SQLite/127.0.0.1 из .env не мешают. Данные БД сохраняются в volume.
 Порты привязаны к localhost. Настройте POSTGRES_PASSWORD в .env для сервера.
-Docker недоступен в текущей среде разработки: конфигурация проверена статически,
-контейнерный запуск не подтверждён. [Развёртывание](docs/DEPLOYMENT.md).
+Локально Docker отсутствует; сборка и запуск контейнеров с PostgreSQL проверены
+в GitHub Actions. [Развёртывание](docs/DEPLOYMENT.md).
 
 ## Проверки и production build
 
