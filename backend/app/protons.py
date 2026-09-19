@@ -160,64 +160,163 @@ def load(period="6h", at=None):
     )
 
 
-def window_factor(snapshot, start, end, historical=False):
-    from .analysis import factor, union_minutes
+def window_factor(
+    snapshot,
+    start,
+    end,
+    forecast_records=None,
+    alerts=None,
+    cutoff=None,
+    forecast_stale=False,
+):
+    from .analysis import factor, overlap, union_minutes
 
     result = factor(
         "protons",
         "insufficient_data",
-        "Наблюдения GOES: >=10 MeV >=10 pfu или >=100 MeV >=1 pfu вызывают attention. Нет экстраполяции в будущее.",
+        "Официальный прогноз S1 описывает будущее окно; измерения GOES показывают текущую обстановку и не экстраполируются. Ненулевая вероятность S1 или действующее протонное предупреждение вызывают attention.",
     )
     result["limitations"] = [
         "GOES не измеряет индивидуальную дозу космонавта.",
-        "Измерения не являются прогнозом. Между точками допускается интервал не более 10 минут.",
+        "Измерения GOES не являются прогнозом. Между точками наблюдений допускается интервал не более 10 минут.",
+        "Суточная вероятность S1 не задаёт точное время события внутри суток.",
     ]
-    if historical:
-        result["limitations"].append(
-            "Архив GOES за эту дату не подключён: DATA_UNAVAILABLE."
+    forecast_records = [
+        row
+        for row in (forecast_records or [])
+        if row.get("metric") == "S1_probability"
+        and not forecast_stale
+        and (
+            not cutoff
+            or (row.get("published_at") and utc(row["published_at"]) <= cutoff)
         )
-        return result
-    if not snapshot:
-        return result
-    result["evidence_ids"] = (
-        [snapshot["evidence_id"]] if snapshot.get("evidence_id") else []
-    )
-    coverage = []
-    attention = []
-    for key in ("gte_10_mev", "gte_100_mev"):
-        rows = snapshot["channels"][key]["series"]
-        segments = []
-        for left, right in zip(rows, rows[1:]):
-            a, b = max(start, utc(left["time"])), min(end, utc(right["time"]))
-            if (
-                a >= b
-                or (utc(right["time"]) - utc(left["time"])).total_seconds() > 600
-                or left["satellite"] != right["satellite"]
-            ):
-                continue
-            segments.append((a, b))
-            high = left["flux"] >= (10 if key == "gte_10_mev" else 1)
-            if high:
-                attention.append((a, b))
-            result["intervals"].append(
-                dict(
-                    start=a.isoformat(),
-                    end=b.isoformat(),
-                    state="attention" if high else "favorable",
-                    metric=left["metric"],
-                    value=left["flux"],
-                    unit="pfu",
-                )
-            )
-        coverage.append(union_minutes(segments))
-        result["facts"].extend(r for r in rows if start <= utc(r["time"]) <= end)
-    result["attention_minutes"] = union_minutes(attention)
-    if (
-        min(coverage, default=0) >= (end - start).total_seconds() / 60
-        and snapshot["status"] == "OK"
-    ):
-        result["status"] = "attention" if attention else "favorable"
-    result["confidence_reasons"] = [
-        "Оценка только покрытой наблюдениями части окна; будущее и пробелы остаются неизвестными."
+        and overlap(start, end, utc(row["start"]), utc(row["end"])) > 0
     ]
+    forecast_coverage = []
+    attention = []
+    for row in forecast_records:
+        a, b = max(start, utc(row["start"])), min(end, utc(row["end"]))
+        forecast_coverage.append((a, b))
+        state = "attention" if row["value"] > 0 else "favorable"
+        if state == "attention":
+            attention.append((a, b))
+        result["facts"].append(row)
+        result["intervals"].append(
+            dict(
+                start=a.isoformat(),
+                end=b.isoformat(),
+                state=state,
+                metric="S1_probability",
+                value=row["value"],
+                unit="%",
+            )
+        )
+
+    for alert in alerts or []:
+        text = str(alert.get("value", "")).lower()
+        if "proton" not in text and "radiation" not in text:
+            continue
+        if alert.get("stale") or not alert.get("start") or not alert.get("end"):
+            continue
+        if cutoff and (
+            not alert.get("published_at") or utc(alert["published_at"]) > cutoff
+        ):
+            continue
+        if overlap(start, end, utc(alert["start"]), utc(alert["end"])) <= 0:
+            continue
+        a, b = max(start, utc(alert["start"])), min(end, utc(alert["end"]))
+        attention.append((a, b))
+        result["facts"].append(alert)
+        result["intervals"].append(
+            dict(
+                start=a.isoformat(),
+                end=b.isoformat(),
+                state="attention",
+                metric=alert["event_id"],
+                unit="message",
+            )
+        )
+        if alert.get("evidence_id"):
+            result["evidence_ids"].append(alert["evidence_id"])
+
+    observation_coverage = {"gte_10_mev": [], "gte_100_mev": []}
+    if snapshot:
+        if snapshot.get("evidence_id"):
+            result["evidence_ids"].append(snapshot["evidence_id"])
+        for key in ("gte_10_mev", "gte_100_mev"):
+            rows = snapshot["channels"][key]["series"]
+            result["facts"].extend(r for r in rows if start <= utc(r["time"]) <= end)
+            for left, right in zip(rows, rows[1:]):
+                a, b = max(start, utc(left["time"])), min(end, utc(right["time"]))
+                if (
+                    snapshot["status"] != "OK"
+                    or a >= b
+                    or (utc(right["time"]) - utc(left["time"])).total_seconds() > 600
+                    or left["satellite"] != right["satellite"]
+                ):
+                    continue
+                observation_coverage[key].append((a, b))
+                high = left["flux"] >= (10 if key == "gte_10_mev" else 1)
+                if high:
+                    attention.append((a, b))
+                result["intervals"].append(
+                    dict(
+                        start=a.isoformat(),
+                        end=b.isoformat(),
+                        state="attention" if high else "favorable",
+                        metric=left["metric"],
+                        value=left["flux"],
+                        unit="pfu",
+                    )
+                )
+        rows_50 = snapshot["channels"]["gte_50_mev"]["series"]
+        result["facts"].extend(r for r in rows_50 if start <= utc(r["time"]) <= end)
+        if snapshot["status"] != "OK":
+            result["limitations"].append(
+                "Текущие измерения GOES отсутствуют или устарели; прогноз окна остаётся отдельным источником."
+            )
+    else:
+        result["limitations"].append(
+            "Текущие измерения GOES недоступны; для окна используется только официальный прогноз S1."
+        )
+
+    result["evidence_ids"] = list(dict.fromkeys(result["evidence_ids"]))
+    result["attention_minutes"] = union_minutes(attention)
+    # Observations cover the mechanism only where BOTH monitored energies exist.
+    observed_both = [
+        (max(a, c), min(b, d))
+        for a, b in observation_coverage["gte_10_mev"]
+        for c, d in observation_coverage["gte_100_mev"]
+        if max(a, c) < min(b, d)
+    ]
+    complete = (
+        union_minutes(forecast_coverage + observed_both)
+        >= (end - start).total_seconds() / 60
+    )
+    result["coverage_minutes"] = union_minutes(forecast_coverage + observed_both)
+    result["forecast_probability_max"] = max(
+        (r["value"] for r in forecast_records), default=None
+    )
+    result["basis"] = (
+        "forecast_and_observations"
+        if forecast_coverage and observed_both
+        else "forecast"
+        if forecast_coverage
+        else "observations"
+        if observed_both
+        else "unavailable"
+    )
+    if forecast_stale:
+        result["limitations"].append(
+            "Устаревший прогноз S1 исключён из оценки покрытия окна."
+        )
+    if complete:
+        result["status"] = "attention" if attention else "favorable"
+        result["confidence_reasons"] = [
+            "Окно покрыто пригодным прогнозом S1 и/или парными измерениями GOES на наблюдённом интервале."
+        ]
+    else:
+        result["confidence_reasons"] = [
+            "Официальный прогноз S1 не покрывает всё окно; текущие измерения не подставляются вместо прогноза."
+        ]
     return result

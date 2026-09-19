@@ -138,7 +138,11 @@ def run(request, bundle=None):
             else adapters.current_sources()
         )
         weather_raw = sources["swpc_forecast"]
-        orbit_raw = sources["celestrak_gp"]
+        orbit_raw = (
+            bundle.get("orbit_raw")
+            if bundle is not None
+            else adapters.current_orbit(sources["celestrak_gp"], start, max_end)
+        )
 
         if weather_raw:
             records = parse_forecast(weather_raw["body"])
@@ -147,6 +151,10 @@ def run(request, bundle=None):
                 weather_raw = {**weather_raw, "stale": True}
                 sources["swpc_forecast"] = weather_raw
         evidence = [x for x in sources.values() if x]
+        if orbit_raw and all(
+            x.get("raw_id") != orbit_raw.get("raw_id") for x in evidence
+        ):
+            evidence.append(orbit_raw)
         if sources.get("swpc_alerts"):
             warnings_status = (
                 "stale" if sources["swpc_alerts"]["stale"] else "available"
@@ -204,7 +212,7 @@ def run(request, bundle=None):
     element = None
     if orbit_raw:
         element = select_elements(json.loads(orbit_raw["body"]), start, cutoff)
-        if element and not orbit_raw.get("stale"):
+        if element:
             try:
                 orbit = propagate(element, start, max_end)
                 orbit.update(
@@ -215,7 +223,12 @@ def run(request, bundle=None):
                     geometry_mode="strict_replay"
                     if cutoff
                     else ("reconstruction" if request.mode != "current" else "current"),
+                    source_stale=bool(orbit_raw.get("stale")),
                 )
+                if orbit_raw.get("stale"):
+                    orbit["limitations"].append(
+                        "Источник не обновился; использован последний пригодный кеш с явно указанной эпохой."
+                    )
             except (ValueError, RuntimeError) as exc:
                 errors.append(str(exc))
     if orbit is None:
@@ -259,7 +272,19 @@ def run(request, bundle=None):
             sw["rule"] += (
                 " Действующее предупреждение NOAA вызывает attention; интервалы объединены с прогнозом."
             )
-        proton = protons.window_factor(proton_snapshot, a, b, request.mode != "current")
+        proton = protons.window_factor(
+            proton_snapshot,
+            a,
+            b,
+            forecast_records=records,
+            alerts=warnings,
+            cutoff=cutoff,
+            forecast_stale=bool(weather_raw and weather_raw.get("stale")),
+        )
+        if weather_raw:
+            proton["evidence_ids"] = list(
+                dict.fromkeys(proton["evidence_ids"] + [weather_raw["raw_id"]])
+            )
         light = factor(
             "illumination",
             "not_applicable" if orbit else "insufficient_data",
@@ -300,7 +325,7 @@ def run(request, bundle=None):
         algorithm_version=ALGORITHM_VERSION,
         request=request.model_dump(mode="json"),
         windows=windows,
-        recommendation=recommend(windows),
+        recommendation=recommend(windows, proton_snapshot),
         orbit=orbit,
         protons=proton_snapshot,
         evidence=[{k: v for k, v in r.items() if k != "body"} for r in evidence],
@@ -316,7 +341,10 @@ def run(request, bundle=None):
         sources=bundle["source_states"] if bundle is not None else adapters.statuses(),
         status="partial"
         if any(
-            f["status"] == "insufficient_data" for w in windows for f in w["factors"]
+            f["mechanism"] in {"space_weather", "protons"}
+            and f["status"] == "insufficient_data"
+            for w in windows
+            for f in w["factors"]
         )
         else "complete",
     )

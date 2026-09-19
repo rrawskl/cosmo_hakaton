@@ -80,7 +80,7 @@ CATALOG = {
     ),
     "spacetrack": dict(
         provider="Space-Track",
-        product="GP_HISTORY ISS 25544",
+        product="GP / GP_HISTORY ISS 25544",
         url="https://www.space-track.org",
         ttl=86400,
         max_age=None,
@@ -420,6 +420,71 @@ def historical_forecast(cutoff):
     return max(candidates, key=lambda x: x[0])[1:] if candidates else (None, [])
 
 
+def _spacetrack_query(url):
+    source_mode = mode("spacetrack")
+    if source_mode == "disabled":
+        return None
+    with Session() as db:
+        existing = db.scalars(
+            select(RawRecord).where(
+                RawRecord.source_id == "spacetrack", RawRecord.url == url
+            )
+        ).all()
+        cached = (
+            max(existing, key=lambda r: r.provenance["retrieved_at"])
+            if existing
+            else None
+        )
+        if source_mode == "frozen":
+            return pack(cached, stale=True) if cached else None
+        if (
+            cached
+            and (utc(now()) - utc(cached.provenance["retrieved_at"])).total_seconds()
+            < CATALOG["spacetrack"]["ttl"]
+        ):
+            return pack(cached)
+    if not settings.spacetrack_username or not settings.spacetrack_password:
+        return None
+    # Credentials only go to the fixed official login endpoint and are never persisted.
+    with httpx.Client(timeout=25, follow_redirects=False) as client:
+        try:
+            auth = client.post(
+                "https://www.space-track.org/ajaxauth/login",
+                data={
+                    "identity": settings.spacetrack_username,
+                    "password": settings.spacetrack_password,
+                },
+            )
+            auth.raise_for_status()
+        except httpx.HTTPError:
+            return None
+        return fetch("spacetrack", url, client=client)
+
+
+def current_orbit(primary, at, end=None):
+    """Prefer CelesTrak, including a usable marked-stale cache, then Space-Track."""
+    if primary:
+        try:
+            usable = any(
+                int(row.get("NORAD_CAT_ID", 0)) == 25544
+                and utc(row["EPOCH"]) <= at
+                and (at - utc(row["EPOCH"])).total_seconds() <= 3 * 86400
+                and ((end or at) - utc(row["EPOCH"])).total_seconds() <= 3 * 86400
+                for row in json.loads(primary["body"])
+            )
+            if usable:
+                return primary
+        except (ValueError, TypeError, KeyError):
+            pass
+    if mode("spacetrack") == "disabled":
+        return None
+    url = (
+        "https://www.space-track.org/basicspacedata/query/class/gp/"
+        "NORAD_CAT_ID/25544/orderby/EPOCH%20desc/limit/1/format/json"
+    )
+    return _spacetrack_query(url)
+
+
 def historical_orbit(start, cutoff):
     path = Path(settings.spacetrack_archive)
     if mode("spacetrack") == "disabled":
@@ -432,8 +497,6 @@ def historical_orbit(start, cutoff):
             "https://www.space-track.org/basicspacedata/query/class/gp_history (local authorized export)",
             body,
         )
-    if not settings.spacetrack_username or not settings.spacetrack_password:
-        return None
     lo = (start - timedelta(days=3)).strftime("%Y-%m-%d")
     hi = (start + timedelta(days=1)).strftime("%Y-%m-%d")
     url = f"https://www.space-track.org/basicspacedata/query/class/gp_history/NORAD_CAT_ID/25544/EPOCH/{lo}--{hi}/orderby/EPOCH/format/json"
@@ -456,20 +519,7 @@ def historical_orbit(start, cutoff):
             return pack(cached, stale=mode("spacetrack") == "frozen")
         if mode("spacetrack") == "frozen":
             return pack(cached, stale=True) if cached else None
-    # Credentials only sent to the fixed official login endpoint, never persisted.
-    with httpx.Client(timeout=25, follow_redirects=False) as client:
-        try:
-            auth = client.post(
-                "https://www.space-track.org/ajaxauth/login",
-                data={
-                    "identity": settings.spacetrack_username,
-                    "password": settings.spacetrack_password,
-                },
-            )
-            auth.raise_for_status()
-        except httpx.HTTPError:
-            return None
-        return fetch("spacetrack", url, client=client)
+    return _spacetrack_query(url)
 
 
 def donki_context(start, end):

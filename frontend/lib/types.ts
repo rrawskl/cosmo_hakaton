@@ -20,6 +20,8 @@ export type Factor = {
   attention_minutes: number;
   shadow_minutes?: number;
   catalog_result?: string;
+  forecast_probability_max?: number | null;
+  basis?: string;
 };
 export type WindowResult = {
   start: string;
@@ -94,7 +96,16 @@ export type Result = {
     cutoff_utc: string | null;
   };
   windows: WindowResult[];
-  recommendation: { status: string; winner: number | null; reason: string };
+  recommendation: {
+    status: string;
+    winner: number | null;
+    reason: string;
+    window_status?: string;
+    confidence?: string;
+    available_findings?: string[];
+    missing_factors?: string[];
+    current_proton_status?: string | null;
+  };
   orbit: Orbit | null;
   evidence: Evidence[];
   limitations: string[];

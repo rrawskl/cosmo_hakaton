@@ -64,6 +64,18 @@ def report(result):
     p("Рекомендация", "HeadingRU")
     p(result["recommendation"]["reason"])
     p("Статус: " + result["recommendation"]["status"])
+    if result["recommendation"].get("window_status"):
+        p("Исходное окно: " + result["recommendation"]["window_status"])
+        p("Уверенность: " + result["recommendation"]["confidence"])
+        if result["recommendation"].get("current_proton_status"):
+            p(
+                "Протоны сейчас (наблюдения GOES): "
+                + result["recommendation"]["current_proton_status"]
+            )
+        for finding in result["recommendation"].get("available_findings", []):
+            p(finding)
+        if result["recommendation"].get("missing_factors"):
+            p("Нет покрытия: " + ", ".join(result["recommendation"]["missing_factors"]))
     for i, w in enumerate(result["windows"]):
         p(f"Окно {i + 1}: {w['start']} — {w['end']}", "HeadingRU")
         p(f"Продолжительность: {w['duration_minutes']} минут")

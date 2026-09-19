@@ -76,6 +76,75 @@ def test_saved_analysis_and_exports_identical(client, monkeypatch):
     assert reproduced["matches"] and not reproduced["network_used"]
 
 
+@pytest.mark.parametrize("with_orbit", [False, True])
+def test_current_reproduction_never_uses_network(client, monkeypatch, with_orbit):
+    from backend.app import analysis, protons
+
+    monkeypatch.setattr(analysis, "now", lambda: "2026-09-18T20:00:00+00:00")
+    forecast = adapters.store_response(
+        "swpc_forecast",
+        adapters.CATALOG["swpc_forecast"]["url"],
+        (FIX / "swpc_forecast.txt").read_text(),
+    )
+    orbit = (
+        adapters.store_response(
+            "celestrak_gp",
+            adapters.CATALOG["celestrak_gp"]["url"],
+            (FIX / "celestrak_gp.txt").read_text(),
+        )
+        if with_orbit
+        else None
+    )
+    if orbit:
+        orbit["stale"] = True
+    monkeypatch.setattr(
+        adapters,
+        "current_sources",
+        lambda: dict(
+            swpc_forecast=forecast,
+            celestrak_gp=orbit,
+            swpc_scales=None,
+            swpc_alerts=None,
+        ),
+    )
+    monkeypatch.setattr(adapters, "current_orbit", lambda *args: orbit)
+    monkeypatch.setattr(
+        protons,
+        "load",
+        lambda **kw: (protons.summarize(None, "primary", at=kw["at"]), None),
+    )
+    response = client.post(
+        "/analysis",
+        json=dict(
+            mode="current",
+            start_utc="2026-09-18T20:00:00Z",
+            duration_minutes=60,
+            search_horizon_minutes=60,
+        ),
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["recommendation"]["status"] != "insufficient_data"
+    if with_orbit:
+        assert data["orbit"]["source_stale"]
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Network forbidden during reproduce")
+
+    for method in [
+        "current_sources",
+        "current_orbit",
+        "historical_orbit",
+        "historical_forecast",
+        "fetch",
+        "donki_context",
+    ]:
+        monkeypatch.setattr(adapters, method, forbidden)
+    monkeypatch.setattr(protons, "load", forbidden)
+    reproduced = client.post(f"/analysis/{data['id']}/reproduce")
+    assert reproduced.status_code == 200 and reproduced.json()["matches"]
+
+
 def test_cutoff_prevents_future_leak(client):
     data = client.post(
         "/analysis",
@@ -123,6 +192,7 @@ def test_all_sources_failed_analysis_is_partial(client, monkeypatch):
             ]
         },
     )
+    monkeypatch.setattr(adapters, "current_orbit", lambda *args: None)
     monkeypatch.setattr(adapters, "fetch", lambda *args, **kwargs: None)
     data = client.post(
         "/analysis",

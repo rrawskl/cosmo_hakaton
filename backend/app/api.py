@@ -180,7 +180,14 @@ def reproduce(identifier: str):
         proton_role=(original.get("protons") or {})
         .get("source", {})
         .get("role", "primary"),
-        orbit_raw=by_source.get("spacetrack"),
+        orbit_raw=next(
+            (
+                v
+                for v in by_source.values()
+                if v.get("raw_id") == (original.get("orbit") or {}).get("raw_id")
+            ),
+            None,
+        ),
         context=by_source.get("donki"),
     )
     rebuilt = run(AnalysisRequest(**original["request"]), bundle=bundle)

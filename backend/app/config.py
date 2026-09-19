@@ -19,4 +19,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-ALGORITHM_VERSION = "2.0.0"
+ALGORITHM_VERSION = "2.1.0"

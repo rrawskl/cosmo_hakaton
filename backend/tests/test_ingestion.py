@@ -56,3 +56,27 @@ def test_raw_deduplicated_and_publication_preserved():
     assert a["published_at"] == "2024-05-10T12:30:00+00:00"
     with Session() as db:
         assert len(db.scalars(select(RawRecord).where(RawRecord.url == url)).all()) == 1
+
+
+def test_current_orbit_accepts_usable_stale_celestrak_cache(monkeypatch):
+    from pathlib import Path
+    from backend.app.schemas import utc
+
+    primary = {
+        "body": (Path(__file__).parent / "fixtures/celestrak_gp.txt").read_text(),
+        "stale": True,
+        "raw_id": "cached",
+    }
+    monkeypatch.setattr(
+        adapters, "_spacetrack_query", lambda *args: pytest.fail("fallback not needed")
+    )
+    result = adapters.current_orbit(primary, utc("2026-09-18T20:00:00Z"))
+    assert result is primary
+
+
+def test_current_orbit_falls_back_to_spacetrack(monkeypatch):
+    fallback = {"raw_id": "space-track"}
+    monkeypatch.setattr(adapters, "_spacetrack_query", lambda *args: fallback)
+    assert (
+        adapters.current_orbit(None, adapters.utc("2026-09-18T20:00:00Z")) == fallback
+    )

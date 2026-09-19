@@ -158,10 +158,128 @@ def test_risk_no_future_extrapolation():
     assert covered["status"] == "attention" and covered["attention_minutes"] == 60
     future = protons.window_factor(r, AT, AT + timedelta(hours=1))
     assert future["status"] == "insufficient_data"
-    assert (
-        protons.window_factor(r, AT - timedelta(hours=1), AT, historical=True)["facts"]
-        == []
+
+
+def test_future_window_uses_forecast_not_measurement():
+    snapshot = protons.summarize(raw(samples(flux=14)), "primary", at=AT)
+    forecast = [
+        dict(
+            metric="S1_probability",
+            value=0,
+            unit="%",
+            start=AT.isoformat(),
+            end=(AT + timedelta(days=1)).isoformat(),
+            published_at=(AT - timedelta(hours=1)).isoformat(),
+            kind="forecast",
+        )
+    ]
+    result = protons.window_factor(
+        snapshot, AT, AT + timedelta(hours=1), forecast_records=forecast
     )
+    assert result["status"] == "favorable"
+    assert result["attention_minutes"] == 0
+    assert any(f["metric"] == "S1_probability" for f in result["facts"])
+    assert all(i["metric"] == "S1_probability" for i in result["intervals"])
+    assert (
+        protons.window_factor(
+            snapshot,
+            AT,
+            AT + timedelta(hours=1),
+            forecast_records=forecast,
+            forecast_stale=True,
+        )["status"]
+        == "insufficient_data"
+    )
+
+
+def test_sparse_or_stale_observations_cannot_fill_forecast_gap():
+    snapshot = protons.summarize(raw(samples(flux=0.1)), "primary", at=AT)
+    snapshot["channels"]["gte_100_mev"]["series"] = []
+    assert (
+        protons.window_factor(snapshot, AT - timedelta(hours=1), AT)["status"]
+        == "insufficient_data"
+    )
+    snapshot = protons.summarize(raw(samples(flux=0.1)), "primary", at=AT)
+    snapshot["status"] = "DATA_STALE"
+    assert (
+        protons.window_factor(snapshot, AT - timedelta(hours=1), AT)["status"]
+        == "insufficient_data"
+    )
+
+
+def test_proton_warning_intervals_union_with_forecast_and_cutoff():
+    forecast = [
+        dict(
+            metric="S1_probability",
+            value=0,
+            unit="%",
+            start=AT.isoformat(),
+            end=(AT + timedelta(hours=1)).isoformat(),
+            published_at=(AT - timedelta(minutes=1)).isoformat(),
+            kind="forecast",
+        )
+    ]
+    alert = dict(
+        value="WARNING: Proton 100 MeV above 1 pfu",
+        event_id="WARPC0",
+        start=AT.isoformat(),
+        end=(AT + timedelta(minutes=30)).isoformat(),
+        published_at=AT.isoformat(),
+        stale=False,
+        evidence_id="alert",
+    )
+    result = protons.window_factor(
+        None,
+        AT,
+        AT + timedelta(hours=1),
+        forecast_records=forecast,
+        alerts=[alert, alert],
+        cutoff=AT,
+    )
+    assert result["status"] == "attention" and result["attention_minutes"] == 30
+    assert result["evidence_ids"] == ["alert"]
+    result = protons.window_factor(
+        None,
+        AT,
+        AT + timedelta(hours=1),
+        forecast_records=forecast,
+        alerts=[alert],
+        cutoff=AT - timedelta(seconds=1),
+    )
+    assert result["status"] == "favorable"
+
+
+def test_historical_forecast_respects_cutoff_and_active_alert():
+    forecast = [
+        dict(
+            metric="S1_probability",
+            value=25,
+            unit="%",
+            start=AT.isoformat(),
+            end=(AT + timedelta(days=1)).isoformat(),
+            published_at=(AT - timedelta(minutes=30)).isoformat(),
+            kind="forecast",
+        )
+    ]
+    assert (
+        protons.window_factor(
+            None,
+            AT,
+            AT + timedelta(hours=1),
+            forecast_records=forecast,
+            cutoff=AT - timedelta(hours=1),
+        )["status"]
+        == "insufficient_data"
+    )
+    result = protons.window_factor(
+        None,
+        AT,
+        AT + timedelta(hours=1),
+        forecast_records=forecast,
+        cutoff=AT,
+    )
+    assert result["status"] == "attention"
+    assert result["attention_minutes"] == 60
 
 
 def test_no_double_count_s1():

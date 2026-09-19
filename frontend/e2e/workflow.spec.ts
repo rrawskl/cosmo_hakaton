@@ -16,8 +16,11 @@ test("historical replay, evidence, saved JSON and responsive layout", async ({
   const response = await responsePromise;
   expect(response.status()).toBe(200);
   const result = await response.json();
+  expect(result.recommendation.status).not.toBe("insufficient_data");
   await expect(
-    page.getByRole("heading", { name: "Недостаточно данных" }),
+    page.getByRole("heading", {
+      name: /Варианты равнозначны|Предпочтительный вариант/,
+    }),
   ).toBeVisible();
   const json = await request.get(`/api/analysis/${result.id}/export.json`);
   expect(await json.json()).toEqual(result);
@@ -46,6 +49,8 @@ test("historical replay, evidence, saved JSON and responsive layout", async ({
   await page.screenshot({ path: "test-results/overview.png", fullPage: true });
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Недостаточно данных" }),
+    page.getByRole("heading", {
+      name: /Варианты равнозначны|Предпочтительный вариант/,
+    }),
   ).toBeVisible();
 });

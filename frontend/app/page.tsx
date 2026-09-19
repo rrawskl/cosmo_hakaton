@@ -634,6 +634,33 @@ export default function Home() {
                     Не является разрешением на проведение ВКД. Индивидуальная
                     доза и риск повреждения скафандра не рассчитываются.
                   </div>
+                  {result?.recommendation.window_status && (
+                    <div className="resultsummary">
+                      <p>
+                        Исходное окно:{" "}
+                        {labels[result.recommendation.window_status] ||
+                          result.recommendation.window_status}
+                      </p>
+                      {result.recommendation.current_proton_status && (
+                        <p>
+                          Протоны сейчас:{" "}
+                          {result.recommendation.current_proton_status} ·
+                          наблюдения GOES
+                        </p>
+                      )}
+                      <p>
+                        {result.recommendation.confidence === "limited"
+                          ? "Уверенность ограничена: доступна часть данных."
+                          : "Оценка по покрытию источниками; точность прогноза не гарантируется."}
+                      </p>
+                      {!!result.recommendation.missing_factors?.length && (
+                        <p>
+                          Нет покрытия:{" "}
+                          {result.recommendation.missing_factors.join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {result && (
                     <button
                       className="textbutton"
@@ -661,7 +688,9 @@ export default function Home() {
                                 ? `${f.shadow_minutes.toFixed(0)} мин в тени · условие работ`
                                 : "Орбитальные данные отсутствуют"
                               : m === "protons"
-                                ? `${f.facts.length} измерений в выбранном окне`
+                                ? f.forecast_probability_max != null
+                                  ? `Прогноз S1: до ${f.forecast_probability_max}% · суточная вероятность`
+                                  : `${f.facts.filter((r) => r.kind === "observation").length} измерений · прогноз S1 недоступен`
                                 : `${f.attention_minutes.toFixed(0)} мин применимости предупреждающих условий`}
                           </p>
                         </>
