@@ -1,0 +1,13 @@
+# Журнал этапов
+
+18–19 сентября 2026: прочитаны исходные PDF и мастер-ТЗ; создана архитектура,
+хранение/provenance, SGP4, NOAA/NCEI replay, Space-Track GP_HISTORY,
+сравнение окон, Next.js-интерфейс по референсу, JSON/PDF и тесты.
+
+19 сентября 2026: по новому пользовательскому заданию версия 2.0.0 заменяет
+второй фактор мониторингом протонной обстановки GOES. Выполнены исследование
+реального JSON, normalizer, primary/secondary fallback, freshness/cache/retry,
+S-scale, тренды/пики, API, интерактивный график, regression и live-проверка.
+
+Файлы, результаты и ограничения: FINAL_REPORT.md и VALIDATION.md.
+Запуск, источники и алгоритм: README.md, SOURCES.md, ALGORITHMS.md.

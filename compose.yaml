@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orbital
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orbital}
+      POSTGRES_DB: orbital
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U orbital]
+      interval: 5s
+      retries: 10
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://orbital:${POSTGRES_PASSWORD:-orbital}@db:5432/orbital
+      NASA_API_KEY: ${NASA_API_KEY:-DEMO_KEY}
+      SPACETRACK_USERNAME: ${SPACETRACK_USERNAME:-}
+      SPACETRACK_PASSWORD: ${SPACETRACK_PASSWORD:-}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      DISABLED_SOURCES: ${DISABLED_SOURCES:-}
+      FROZEN_SOURCES: ${FROZEN_SOURCES:-}
+      AUTO_REFRESH: "true"
+      NOAA_REQUEST_TIMEOUT_SECONDS: ${NOAA_REQUEST_TIMEOUT_SECONDS:-10}
+      NOAA_CACHE_TTL_SECONDS: ${NOAA_CACHE_TTL_SECONDS:-120}
+      PROTON_DATA_STALE_MINUTES: ${PROTON_DATA_STALE_MINUTES:-30}
+    volumes:
+      - ./data/private:/app/data/private:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - 127.0.0.1:8000:8000
+  frontend:
+    build: ./frontend
+    environment:
+      API_BASE_URL: http://backend:8000
+    ports:
+      - 127.0.0.1:3000:3000
+    depends_on:
+      - backend
+volumes:
+  postgres:

@@ -1,0 +1,93 @@
+[
+  {
+    "file": "202405021230.txt",
+    "url": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/05/202405021230three_day_forecast.txt",
+    "retrieved_at": "2026-09-18",
+    "sha256": "e824fc7ba5d649690bcffce335433ada8514ae7e4913e3c7fec0de6030adba91",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "202405111230.txt",
+    "url": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/05/202405111230three_day_forecast.txt",
+    "retrieved_at": "2026-09-18",
+    "sha256": "b471ec4f6107bc0e1d5625c0d16e748f95f97327fe1a52313968f0636723b086",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "celestrak_gp.txt",
+    "url": "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON",
+    "retrieved_at": "2026-09-18T19:50:22.397362+00:00",
+    "sha256": "b4dcf3e10ccc317c0109a5aaaacc790cf3c0f990b84cf347031e32f4e17a999d",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "donki.txt",
+    "url": "https://api.nasa.gov/DONKI/SEP?startDate=2024-05-01&endDate=2024-05-31&api_key=REDACTED",
+    "retrieved_at": "2026-09-18T19:50:24.067045+00:00",
+    "sha256": "5994d7a8ac8a34dbc12de1f4b03721d665c8884c38e0a1d1e7efd02d82e0752d",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "quiet.txt",
+    "url": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/05/202405011230three_day_forecast.txt",
+    "retrieved_at": "2026-09-18",
+    "sha256": "a4eb214d468a89ac6c2a995f123e30398e93b766db2b5d8656bbe47ffa5af781",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "rsga_example.txt",
+    "url": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/reports_solar_geophysical_activity/2024/06/20240602RSGA.txt",
+    "retrieved_at": "2026-09-18",
+    "sha256": "8e2c25ed605e925a5cbf7f016e1bf31972fef0ec9a0db547ae98dc2f70288fdb",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "storm.txt",
+    "url": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/05/202405101230three_day_forecast.txt",
+    "retrieved_at": "2026-09-18",
+    "sha256": "7aa6398da76fc3136f183c574e86d8d962393c8f017b41cd210486aa0ba8383e",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "swpc_forecast.txt",
+    "url": "https://services.swpc.noaa.gov/text/3-day-forecast.txt",
+    "retrieved_at": "2026-09-18T19:50:22.656368+00:00",
+    "sha256": "58a551c6995846f54846c64dd7fe5b455204e503cdf8fb73e424c454faa6e89d",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "swpc_protons.txt",
+    "url": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json",
+    "retrieved_at": "2026-09-18T19:50:23.155570+00:00",
+    "sha256": "931595349e2ca2ad3fdb1d26d9e14a313539212069de67127dd6339958ee8cb4",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "swpc_scales.txt",
+    "url": "https://services.swpc.noaa.gov/products/noaa-scales.json",
+    "retrieved_at": "2026-09-18T19:50:22.992800+00:00",
+    "sha256": "b4c59635370076e4785ef3f7b367902725a8bf7e71a370ffd15a441409f8b6c5",
+    "transformation": "UTF-8 local copy; line endings may differ from HTTP response"
+  },
+  {
+    "file": "swpc_alerts.txt",
+    "url": "https://services.swpc.noaa.gov/products/alerts.json",
+    "retrieved_at": "2026-09-18",
+    "sha256": "a24d281bbe3548773e59f9101a37ee689ddca25a8783b1a6bac9483e11cabbad",
+    "transformation": "None"
+  },
+  {
+    "file": "protons-primary.json",
+    "url": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-6-hour.json",
+    "retrieved_at": "2026-09-19",
+    "sha256": "26218afb4f3afb8262ae206501747af8de71789f0bddac636c953873d3f1d112",
+    "transformation": "Official JSON response; test fixture only"
+  },
+  {
+    "file": "protons-secondary.json",
+    "url": "https://services.swpc.noaa.gov/json/goes/secondary/integral-protons-6-hour.json",
+    "retrieved_at": "2026-09-19",
+    "sha256": "d8dcc24af38092ca611aeaaf90cde3806d4a74cd80bd84a0f4fbad8fbfff6688",
+    "transformation": "Official JSON response; test fixture only"
+  }
+]

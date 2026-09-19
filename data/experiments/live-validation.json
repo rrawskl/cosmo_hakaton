@@ -1,0 +1,24 @@
+{
+  "algorithm_version": "2.0.0",
+  "checked_at": "2026-09-19",
+  "noaa_http_status": 200,
+  "role": "primary",
+  "satellite": 18,
+  "observed_at": "2026-09-19T05:20:00Z",
+  "flux_pfu": {
+    "gte_10_mev": 0.2496662586927414,
+    "gte_50_mev": 0.2298649549484253,
+    "gte_100_mev": 0.2284029722213745
+  },
+  "noaa_scale": "BELOW_S1",
+  "internal_status": "NORMAL",
+  "ranges_checked": [
+    "6h",
+    "1d",
+    "3d",
+    "7d"
+  ],
+  "saved_json_matches": true,
+  "offline_reproduction_matches": true,
+  "note": "Validation record only, never loaded by production"
+}

@@ -1,0 +1,78 @@
+[
+  {
+    "source": "swpc_forecast",
+    "url": "https://services.swpc.noaa.gov/text/3-day-forecast.txt",
+    "status": 200,
+    "bytes": 1986,
+    "sha256": "62f5972517172232b66b10f50274d0f3d52b235ac4e2a4f033b0ecedbd9b38c7",
+    "retrieved_at": "2026-09-18T19:50:22.656368+00:00",
+    "preview": ":Product: 3-Day Forecast\n:Issued: 2026 Sep 18 1230 UTC\n# Prepared by the U.S. Dept. of Commerce, NOAA, Space Weather Prediction Center\n#\nA. NOAA Geomagnetic Activity Observation an"
+  },
+  {
+    "source": "swpc_scales",
+    "url": "https://services.swpc.noaa.gov/products/noaa-scales.json",
+    "status": 200,
+    "bytes": 1096,
+    "sha256": "b4c59635370076e4785ef3f7b367902725a8bf7e71a370ffd15a441409f8b6c5",
+    "retrieved_at": "2026-09-18T19:50:22.992800+00:00",
+    "preview": "{\"0\": {\"DateStamp\": \"2026-09-18\", \"TimeStamp\": \"19:47:00\", \"R\": {\"Scale\": \"0\", \"Text\": \"none\", \"MinorProb\": null, \"MajorProb\": null}, \"S\": {\"Scale\": \"0\", \"Text\": \"none\", \"Prob\": nu"
+  },
+  {
+    "source": "swpc_protons",
+    "url": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json",
+    "status": 200,
+    "bytes": 242271,
+    "sha256": "931595349e2ca2ad3fdb1d26d9e14a313539212069de67127dd6339958ee8cb4",
+    "retrieved_at": "2026-09-18T19:50:23.155570+00:00",
+    "preview": "[{\"time_tag\": \"2026-09-17T19:50:00Z\", \"satellite\": 18, \"flux\": 8.596674919128418, \"energy\": \">=1 MeV\"}, {\"time_tag\": \"2026-09-17T19:50:00Z\", \"satellite\": 18, \"flux\": 0.219049945473"
+  },
+  {
+    "source": "celestrak_gp",
+    "url": "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=JSON",
+    "status": 200,
+    "bytes": 425,
+    "sha256": "9675c7698f557565ef1f7233a7d32a50ef2635505095cdfb3ace2a4156b608ed",
+    "retrieved_at": "2026-09-18T19:50:22.397362+00:00",
+    "preview": "[{\"OBJECT_NAME\":\"ISS (ZARYA)\",\"OBJECT_ID\":\"1998-067A\",\"EPOCH\":\"2026-09-18T03:25:38.782272\",\"MEAN_MOTION\":15.49160218,\"ECCENTRICITY\":0.00048228,\"INCLINATION\":51.6307,\"RA_OF_ASC_NODE"
+  },
+  {
+    "source": "socrates",
+    "error": "URLError: <urlopen error _ssl.c:993: The handshake operation timed out>"
+  },
+  {
+    "source": "ncei",
+    "url": "https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/daily_reports/3day_forecast/2024/",
+    "status": 200,
+    "bytes": 3624,
+    "sha256": "fb0bb6852cca5d4820f8508934fc499d03e71fdaf5946cc214ea9fba0087b545",
+    "retrieved_at": "2026-09-18T19:50:22.624265+00:00",
+    "preview": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<html>\n <head>\n  <title>Index of /stp/space-weather/swpc-products/daily_reports/3day_forecast/2024</title>\n </head>\n <body>\n"
+  },
+  {
+    "source": "donki",
+    "url": "https://api.nasa.gov/DONKI/SEP?startDate=2024-05-01&endDate=2024-05-31&api_key=REDACTED",
+    "status": 200,
+    "bytes": 9685,
+    "sha256": "5994d7a8ac8a34dbc12de1f4b03721d665c8884c38e0a1d1e7efd02d82e0752d",
+    "retrieved_at": "2026-09-18T19:50:24.067045+00:00",
+    "preview": "[{\"sepID\":\"2024-05-09T13:59:00-SEP-001\",\"eventTime\":\"2024-05-09T13:59Z\",\"instruments\":[{\"displayName\":\"MODEL: REleASE:ACE/EPAM 15.8-39.8 MeV\"}],\"submissionTime\":\"2024-05-09T13:54Z\""
+  },
+  {
+    "source": "spacetrack",
+    "url": "https://www.space-track.org/basicspacedata/query/class/gp_history/NORAD_CAT_ID/25544/EPOCH/2024-05-10--2024-05-11/format/json",
+    "status": 401,
+    "bytes": 57,
+    "sha256": "71b473b8fd1aea8838c4eab47765729c8b5127dc660846ed22218e2f2692bdc3",
+    "retrieved_at": "2026-09-18T19:50:23.480556+00:00",
+    "preview": "{\"error\":\"You must be logged in to complete this action\"}"
+  },
+  {
+    "source": "meo",
+    "url": "https://www.nasa.gov/meteoroid-environment-office/",
+    "status": 200,
+    "bytes": 261700,
+    "sha256": "c4e9e6a1455b23676576ed1c3dc6443198fe1b262015f352f1c69a6244fb2e3e",
+    "retrieved_at": "2026-09-18T19:50:27.328239+00:00",
+    "preview": "<!doctype html>\n<html lang=\"en-US\" prefix=\"og: https://ogp.me/ns#\">\n<head>\n\t<meta charset=\"UTF-8\">\n<script>\nvar gform;gform||(document.addEventListener(\"gform_main_scripts_loaded\","
+  }
+]

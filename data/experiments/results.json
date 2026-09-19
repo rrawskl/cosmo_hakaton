@@ -1,0 +1,98 @@
+{
+  "cases": [
+    {
+      "case": "storm",
+      "issued": "2024-05-10T12:30:00+00:00",
+      "verification_issued": "2024-05-11T12:30:00+00:00",
+      "forecast_max_kp": 8.33,
+      "baseline_last_observed_max_kp": 3.0,
+      "verified_observed_max_kp": 9.0,
+      "prediction": true,
+      "baseline_prediction": false,
+      "event": true,
+      "forecast_horizon_hours": 24,
+      "forecast_first_threshold_lead_hours": 8.5,
+      "onset_timing_error_minutes": null,
+      "warning_lead_to_observed_onset_minutes": null,
+      "missing_metrics_reason": "Верификация даёт максимум за 24 часа, а не точное время наблюдавшегося начала.",
+      "shifts": [
+        {
+          "shift_minutes": -15,
+          "status": "attention",
+          "attention_minutes": 360.0
+        },
+        {
+          "shift_minutes": 0,
+          "status": "attention",
+          "attention_minutes": 360.0
+        },
+        {
+          "shift_minutes": 15,
+          "status": "attention",
+          "attention_minutes": 360.0
+        }
+      ],
+      "stale_status": "insufficient_data",
+      "forecast_sha256": "7aa6398da76fc3136f183c574e86d8d962393c8f017b41cd210486aa0ba8383e",
+      "verification_sha256": "b471ec4f6107bc0e1d5625c0d16e748f95f97327fe1a52313968f0636723b086"
+    },
+    {
+      "case": "control",
+      "issued": "2024-05-01T12:30:00+00:00",
+      "verification_issued": "2024-05-02T12:30:00+00:00",
+      "forecast_max_kp": 4.0,
+      "baseline_last_observed_max_kp": 4.0,
+      "verified_observed_max_kp": 3.0,
+      "prediction": false,
+      "baseline_prediction": false,
+      "event": false,
+      "forecast_horizon_hours": 24,
+      "forecast_first_threshold_lead_hours": null,
+      "onset_timing_error_minutes": null,
+      "warning_lead_to_observed_onset_minutes": null,
+      "missing_metrics_reason": "Верификация даёт максимум за 24 часа, а не точное время наблюдавшегося начала.",
+      "shifts": [
+        {
+          "shift_minutes": -15,
+          "status": "attention",
+          "attention_minutes": 360.0
+        },
+        {
+          "shift_minutes": 0,
+          "status": "attention",
+          "attention_minutes": 360.0
+        },
+        {
+          "shift_minutes": 15,
+          "status": "attention",
+          "attention_minutes": 360.0
+        }
+      ],
+      "stale_status": "insufficient_data",
+      "forecast_sha256": "a4eb214d468a89ac6c2a995f123e30398e93b766db2b5d8656bbe47ffa5af781",
+      "verification_sha256": "e824fc7ba5d649690bcffce335433ada8514ae7e4913e3c7fec0de6030adba91"
+    }
+  ],
+  "metrics": {
+    "prediction": {
+      "hits": 1,
+      "misses": 0,
+      "false_alarms": 0,
+      "correct_negatives": 1
+    },
+    "baseline_prediction": {
+      "hits": 0,
+      "misses": 1,
+      "false_alarms": 0,
+      "correct_negatives": 1
+    }
+  },
+  "limitations": [
+    "Два примера, статистическая значимость не заявляется.",
+    "Проверяется порог Kp ≥ 5, не безопасность ВКД и не вероятность травмы.",
+    "Выпуск после cutoff используется только для проверки.",
+    "Контроль спокойный по Kp, а не по всем S/G/R.",
+    "Бины Kp имеют разрешение 3 часа; 24-часовой период выпуска начинается в 12:30 и пересекает граничные бины.",
+    "Глобальная устойчивость выбора окна не измерена: исторические измерения GOES не подключены."
+  ]
+}
