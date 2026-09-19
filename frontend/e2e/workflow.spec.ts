@@ -17,6 +17,17 @@ test("historical replay, evidence, saved JSON and responsive layout", async ({
   expect(response.status()).toBe(200);
   const result = await response.json();
   expect(result.recommendation.status).not.toBe("insufficient_data");
+  expect(result.protons).toBeNull();
+  expect(
+    result.windows[0].factors.find(
+      (f: { mechanism: string }) => f.mechanism === "protons",
+    ).forecast_probability_max,
+  ).toBe(55);
+  const protonPanel = page.getByRole("region", {
+    name: "Протонная обстановка",
+  });
+  await expect(protonPanel).toContainText("DATA_UNAVAILABLE / UNKNOWN");
+  await expect(protonPanel.getByRole("img")).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
       name: /Варианты равнозначны|Предпочтительный вариант/,
@@ -28,9 +39,18 @@ test("historical replay, evidence, saved JSON and responsive layout", async ({
     .getByRole("button", { name: "Сравнение окон", exact: true })
     .click();
   await expect(page.locator(".windowcard")).toHaveCount(3);
+  await expect(page.locator(".comparison")).not.toContainText(
+    "Неблагоприятные условия: 0",
+  );
+  await expect(page.locator(".comparison")).toContainText(
+    "применимость условий внимания: 360 мин",
+  );
   await expect(page.locator(".windowcard").first()).toContainText("Kp:");
   await expect(page.locator(".windowcard").first()).toContainText("S1+:");
-  await page.screenshot({ path: "test-results/comparison.png", fullPage: true });
+  await page.screenshot({
+    path: "test-results/comparison.png",
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Доказательства", exact: true })
     .click();

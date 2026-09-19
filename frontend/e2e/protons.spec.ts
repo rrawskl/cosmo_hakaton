@@ -63,7 +63,12 @@ for (const [status, level] of [
 ]) {
   test(`proton UI ${status} ${level}`, async ({ page }) => {
     await page.route("**/api/protons/history?*", (route) =>
-      route.fulfill({ json: makeData(status, level) }),
+      route.fulfill({
+        json: {
+          ...makeData(status, level),
+          range: new URL(route.request().url()).searchParams.get("range"),
+        },
+      }),
     );
     await page.goto("/");
     const panel = page.getByRole("region", { name: "Протонная обстановка" });
@@ -80,8 +85,13 @@ for (const [status, level] of [
         ),
       ).toBeTruthy();
     }
-    await panel.getByRole("combobox").selectOption("1d");
-    await expect(panel.getByRole("combobox")).toHaveValue("1d");
+    await panel.getByRole("button", { name: "1 день", exact: true }).click();
+    await expect(
+      panel.getByRole("button", { name: "1 день", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      panel.getByText("Статус приложения:", { exact: false }),
+    ).toBeVisible();
     await panel
       .getByRole("checkbox", { name: "≥50 MeV", exact: true })
       .uncheck();
@@ -110,6 +120,130 @@ test("slow and failed proton API show states", async ({ page }) => {
       .getByRole("region", { name: "Протонная обстановка" })
       .getByRole("alert"),
   ).toContainText("Не удалось связаться");
+});
+
+test("range changes update real rendered series, all peaks and sources after saved current analysis", async ({
+  page,
+  request,
+}) => {
+  // A saved result exercises the previous disabled-select regression; NOAA values below are test fixtures only.
+  const base = await request.post("/api/analysis", {
+    data: {
+      mode: "historical_replay",
+      start_utc: "2024-05-10T13:00:00Z",
+      cutoff_utc: "2024-05-10T12:30:00Z",
+      duration_minutes: 360,
+      search_horizon_minutes: 720,
+    },
+  });
+  expect(base.ok()).toBeTruthy();
+  const saved = await base.json();
+  saved.request.mode = "current";
+  saved.request.cutoff_utc = null;
+  saved.protons = makeData();
+  await page.route("**/api/analysis/test-current", (route) =>
+    route.fulfill({ json: saved }),
+  );
+  const calls: string[] = [];
+  await page.route("**/api/protons/history?*", async (route) => {
+    const range = new URL(route.request().url()).searchParams.get("range")!;
+    calls.push(range);
+    const n = ["6h", "1d", "3d", "7d"].indexOf(range) + 1;
+    const data = makeData();
+    data.range = range;
+    for (const energy of [10, 50, 100]) {
+      const channel = data.channels[`gte_${energy}_mev`];
+      channel.flux = energy * n;
+      channel.satellite = 18 + n;
+      channel.series = [
+        { time: "2026-09-19T05:10:00Z", flux: energy * n, satellite: 18 + n },
+        {
+          time: "2026-09-19T05:15:00Z",
+          flux: energy * n * 2,
+          satellite: 18 + n,
+        },
+      ];
+      Object.assign(channel, {
+        peak: { flux: energy * n * 2, time: "2026-09-19T05:15:00Z" },
+      });
+    }
+    await route.fulfill({ json: data });
+  });
+  await page.goto("/?analysis=test-current");
+  const panel = page.getByRole("region", { name: "Протонная обстановка" });
+  await expect(
+    panel.getByText("Оперативные измерения сейчас.", { exact: false }),
+  ).toBeVisible();
+  let previous = "";
+  for (const [i, label] of ["6 часов", "1 день", "3 дня", "7 дней"].entries()) {
+    if (i)
+      await panel.getByRole("button", { name: label, exact: true }).click();
+    await expect(
+      panel.getByRole("button", { name: label, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    for (const [j, energy] of [10, 50, 100].entries()) {
+      const card = panel.locator(".protonmetrics > div").nth(j);
+      await expect(card).toContainText(
+        `Пик: ${(energy * (i + 1) * 2).toPrecision(4)} pfu`,
+      );
+      await expect(card).toContainText(`GOES-${19 + i}`);
+      await expect(card).toContainText("19.09.2026, 05:15");
+    }
+    const plotted = await panel.locator(".protonchart").innerHTML();
+    expect(plotted).not.toBe(previous);
+    previous = plotted;
+    expect(calls).toContain(["6h", "1d", "3d", "7d"][i]);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    panel.getByRole("button", { name: "7 дней", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+  await page.screenshot({
+    path: "test-results/proton-ranges-mobile.png",
+    fullPage: true,
+  });
+  await page.route("**/api/protons/history?range=1d", (route) =>
+    route.fulfill({ status: 422, body: '{"detail":"internal test error"}' }),
+  );
+  await panel.getByRole("button", { name: "1 день", exact: true }).click();
+  await expect(panel.getByRole("alert")).toContainText(
+    "Этот диапазон не поддерживается",
+  );
+  await expect(panel.getByRole("img")).toHaveCount(0);
+  await expect(panel).not.toContainText("internal test error");
+});
+
+test("old historical selections hide modern observations before calculation", async ({
+  page,
+}) => {
+  let calls = 0;
+  await page.route("**/api/protons/history?*", (route) => {
+    calls++;
+    return route.fulfill({ json: makeData() });
+  });
+  await page.goto("/");
+  const panel = page.getByRole("region", { name: "Протонная обстановка" });
+  await expect(panel.getByRole("img")).toBeVisible();
+  for (const mode of ["historical_replay", "historical_review"]) {
+    await page
+      .getByRole("combobox", { name: "Режим", exact: true })
+      .selectOption(mode);
+    await page.getByLabel("Начало ВКД UTC").fill("2024-05-10T13:00");
+    const before = calls;
+    await expect(panel).toContainText(
+      "Исторические измерения GOES для выбранного периода недоступны",
+    );
+    await expect(panel).toContainText("DATA_UNAVAILABLE / UNKNOWN");
+    await expect(panel.getByRole("img")).toHaveCount(0);
+    await expect(panel).not.toContainText("NORMAL");
+    await expect(panel).not.toContainText("0 pfu");
+    expect(calls).toBe(before);
+  }
 });
 test("live NOAA through API to graph, navigation and console", async ({
   page,

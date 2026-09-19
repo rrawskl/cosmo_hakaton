@@ -1,5 +1,6 @@
 "use client";
 import ProtonPanel from "./ProtonPanel";
+import { hasAdverseAssessment } from "../lib/proton-view";
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -748,8 +749,10 @@ export default function Home() {
           )}
           {(section === "overview" || section === "timeline") && (
             <ProtonPanel
-              snapshot={result?.protons}
-              historical={!!result && result.request.mode !== "current"}
+              mode={mode}
+              start={start}
+              duration={duration}
+              saved={!!result}
             />
           )}
           {(section === "timeline" || section === "overview") && (
@@ -872,7 +875,14 @@ export default function Home() {
                             <span>{mechanisms[f.mechanism]}</span>
                             <Badge status={f.status} />
                             <small>
-                              Неблагоприятные условия: {f.adverse_minutes} мин ·
+                              {hasAdverseAssessment(
+                                result.windows.flatMap((w) => w.factors),
+                              ) && (
+                                <>
+                                  Неблагоприятные условия: {f.adverse_minutes}{" "}
+                                  мин ·{" "}
+                                </>
+                              )}
                               применимость условий внимания:{" "}
                               {f.attention_minutes} мин
                             </small>

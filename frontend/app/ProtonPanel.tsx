@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { stamp, time } from "../lib/format";
+import { stamp } from "../lib/format";
+import {
+  observationRequest,
+  observationsForPeriod,
+  protonRanges,
+  ProtonRange,
+} from "../lib/proton-view";
 export type ProtonData = {
   status: string;
   range: string;
@@ -37,6 +43,7 @@ const names: Record<string, string> = {
   OK: "Актуальные данные",
   DATA_STALE: "Данные устарели",
   DATA_UNAVAILABLE: "Данные недоступны",
+  HISTORICAL_OBSERVATIONS: "Измерения выбранного периода",
   RISING: "↑ Растущий",
   FALLING: "↓ Снижающийся",
   STABLE: "→ Стабильный",
@@ -45,22 +52,37 @@ const names: Record<string, string> = {
 const energies = [10, 50, 100];
 const colors = ["#66d9f1", "#b895ff", "#ffbc69"];
 export default function ProtonPanel({
-  snapshot,
-  historical = false,
+  mode = "current",
+  start = "",
+  duration = 360,
+  saved = false,
 }: {
-  snapshot?: ProtonData | null;
-  historical?: boolean;
+  mode?: string;
+  start?: string;
+  duration?: number;
+  saved?: boolean;
 }) {
-  const [data, setData] = useState<ProtonData | null>(snapshot || null);
-  const [range, setRange] = useState("6h");
+  const [response, setResponse] = useState<{
+    key: string;
+    data: ProtonData;
+  } | null>(null);
+  const [range, setRange] = useState<ProtonRange>("6h");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [enabled, setEnabled] = useState([true, true, true]);
   const [cursor, setCursor] = useState(100);
+  const historical = mode !== "current";
+  const request = observationRequest(mode, start, duration, range);
+  const key = historical ? `${mode}/${start}/${duration}` : range;
+  const data = request && response?.key === key ? response.data : null;
   useEffect(() => {
-    if (snapshot || historical) {
-      setData(snapshot || null);
+    const request = observationRequest(mode, start, duration, range);
+    setError("");
+    setResponse(null);
+    setCursor(100);
+    if (!request) {
+      setLoading(false);
       return;
     }
     const abort = new AbortController();
@@ -69,15 +91,34 @@ export default function ProtonPanel({
       setLoading(true);
       setError("");
       try {
-        const r = await fetch(`/api/protons/history?range=${range}`, {
+        const r = await fetch(`/api/protons/history?range=${request!.range}`, {
           signal: abort.signal,
         });
-        if (!r.ok) throw Error();
+        if (!r.ok) throw Error(r.status === 422 ? "unsupported" : "request");
         const d = await r.json();
-        if (active) setData(d);
+        if (
+          d.range !== request!.range ||
+          !d.channels ||
+          !d.source ||
+          !d.noaa_scale ||
+          !d.freshness ||
+          !Array.isArray(d.reasons) ||
+          energies.some(
+            (energy) => !Array.isArray(d.channels[`gte_${energy}_mev`]?.series),
+          )
+        )
+          throw Error("response");
+        if (active)
+          setResponse({ key, data: observationsForPeriod(d, request!) });
       } catch (e) {
-        if (active && !abort.signal.aborted)
-          setError("Не удалось связаться с API. Повторите обновление.");
+        if (active && !abort.signal.aborted) {
+          setResponse(null);
+          setError(
+            e instanceof Error && e.message === "unsupported"
+              ? "Этот диапазон не поддерживается источником данных."
+              : "Не удалось связаться с API. Измерения недоступны; повторите обновление.",
+          );
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -89,7 +130,7 @@ export default function ProtonPanel({
       abort.abort();
       clearInterval(timer);
     };
-  }, [range, refresh, snapshot, historical]);
+  }, [range, refresh, mode, start, duration, key]);
   const rows = energies.map((e) => data?.channels[`gte_${e}_mev`]);
   const times = rows.flatMap(
     (r) => r?.series.map((p) => Date.parse(p.time)) || [],
@@ -109,30 +150,47 @@ export default function ProtonPanel({
       <p className="protonnote">
         Показатель основан на измерениях спутников GOES и характеризует
         солнечно-протонную обстановку в околоземном пространстве. Он не является
-        прямым измерением индивидуальной дозы космонавта.
+        прямым измерением индивидуальной дозы космонавта. Диапазон графика —
+        прошедшие наблюдения, не длительность ВКД и не прогноз.
       </p>
-      {historical && !snapshot ? (
-        <p role="status">
-          DATA_UNAVAILABLE — архив протонных измерений для выбранной
-          исторической даты не подключён.
-        </p>
+      {!request ? (
+        <div role="status">
+          <p>Исторические измерения GOES для выбранного периода недоступны.</p>
+          <p>
+            DATA_UNAVAILABLE / UNKNOWN. Оперативный rolling-архив NOAA GOES
+            охватывает до 7 дней. Для более старых дат могут использоваться
+            исторические прогнозы S1; измерения не подменяются современными
+            данными.
+          </p>
+        </div>
       ) : (
         <>
           <div className="protoncontrols">
-            <label>
-              Период графика{" "}
-              <select
+            {!historical && (
+              <div
+                className="protonranges"
+                role="group"
                 aria-label="Период протонного графика"
-                value={snapshot ? data?.range : range}
-                disabled={!!snapshot}
-                onChange={(e) => setRange(e.target.value)}
               >
-                {["6h", "1d", "3d", "7d"].map((v) => (
-                  <option key={v}>{v}</option>
+                {protonRanges.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    aria-pressed={range === r.value}
+                    onClick={() => setRange(r.value)}
+                  >
+                    {r.label}
+                  </button>
                 ))}
-              </select>
-            </label>
-            {!snapshot && (
+              </div>
+            )}
+            {historical && (
+              <small>
+                Измерения только выбранного периода: {stamp(start)} · {duration}{" "}
+                мин
+              </small>
+            )}
+            {
               <button
                 type="button"
                 disabled={loading}
@@ -140,12 +198,17 @@ export default function ProtonPanel({
               >
                 Обновить протоны
               </button>
+            }
+            {saved && !historical && (
+              <small>
+                Оперативные измерения сейчас. Сохранённые измерения расчёта
+                остаются в JSON/PDF.
+              </small>
             )}
-            {snapshot && <small>Сохранённые измерения на момент расчёта</small>}
             {loading && <span role="status">Загрузка измерений NOAA…</span>}
             {error && <span role="alert">{error}</span>}
           </div>
-          {data && (
+          {data && !loading && !error && (
             <>
               <p
                 className={data.status === "OK" ? "" : "protonwarning"}
@@ -280,10 +343,10 @@ export default function ProtonPanel({
                       strokeDasharray="3 3"
                     />
                     <text x="60" y="270">
-                      {time(new Date(begin).toISOString())} UTC
+                      {stamp(new Date(begin).toISOString())}
                     </text>
-                    <text x="660" y="270">
-                      {time(new Date(end).toISOString())} UTC
+                    <text x="760" y="270" textAnchor="end">
+                      {stamp(new Date(end).toISOString())}
                     </text>
                   </svg>
                   <label className="protoncursor">
