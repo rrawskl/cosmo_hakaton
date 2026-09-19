@@ -75,3 +75,58 @@ def test_real_alert_validity_and_dedup():
     assert rows
     assert any(r["start"] and r["end"] for r in rows)
     assert len(parse_alerts(json.dumps(json.loads(text) * 2))) == len(rows)
+
+
+@pytest.mark.parametrize(
+    "old,new",
+    [
+        ("8.33", "-1.00"),
+        ("8.33", "10.00"),
+        ("55%", "155%"),
+        ("55%", "-5%"),
+        ("00-03UT", "00-06UT"),
+        ("03-06UT", "00-03UT"),
+    ],
+)
+def test_forecast_rejects_invalid_values_and_duplicate_intervals(old, new):
+    text = (FIX / "storm.txt").read_text()
+    assert old in text
+    with pytest.raises(ValueError):
+        parse_forecast(text.replace(old, new))
+
+
+def test_cancelled_warning_is_explicit():
+    import json
+    from backend.app.parsers import parse_alerts
+
+    rows = parse_alerts(
+        json.dumps(
+            [
+                dict(
+                    product_id="WARPX1",
+                    issue_datetime="2024-05-10T12:30:00Z",
+                    message="Message Code: WARPX1\nCANCELLED WARNING: Proton\nValid From: 2024 May 10 1200 UTC\nValid Until: 2024 May 10 1800 UTC",
+                )
+            ]
+        )
+    )
+    assert rows[0]["cancelled"]
+
+
+@pytest.mark.parametrize("label", ["Valid To", "Valid Until", "Now Valid Until"])
+def test_warning_end_time_forms(label):
+    import json
+    from backend.app.parsers import parse_alerts
+
+    rows = parse_alerts(
+        json.dumps(
+            [
+                dict(
+                    product_id="WARPX1",
+                    issue_datetime="2024-05-10T12:30:00Z",
+                    message=f"Message Code: WARPX1\nWARNING: Proton\nValid From: 2024 May 10 1200 UTC\n{label}: 2024 May 10 1800 UTC",
+                )
+            ]
+        )
+    )
+    assert rows[0]["end"] == "2024-05-10T18:00:00+00:00"

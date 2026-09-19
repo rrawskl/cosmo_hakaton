@@ -66,7 +66,11 @@ def weather(records, start, end, raw, cutoff=None):
         result["evidence_ids"] = [raw["raw_id"]]
     if cutoff:
         records = eligible(records, cutoff)
-    records = [r for r in records if r["metric"] != "S1_probability"]
+    records = [
+        r
+        for r in records
+        if r["metric"] in {"Kp", "R1_R2_probability", "R3_probability"}
+    ]
     relevant = [
         r for r in records if overlap(start, end, utc(r["start"]), utc(r["end"])) > 0
     ]
@@ -102,7 +106,7 @@ def weather(records, start, end, raw, cutoff=None):
         complete = False
     if not complete:
         result["confidence_reasons"] = [
-            "Не все временные интервалы и линии S/G/R покрыты пригодным выпуском."
+            "Не все временные интервалы Kp/R покрыты пригодным выпуском."
         ]
     else:
         result["status"] = "attention" if intervals else "favorable"
@@ -147,7 +151,7 @@ def run(request, bundle=None):
         if weather_raw:
             records = parse_forecast(weather_raw["body"])
             issued = utc(records[0]["published_at"])
-            if (reference_time - issued).total_seconds() > 18 * 3600:
+            if not 0 <= (reference_time - issued).total_seconds() <= 18 * 3600:
                 weather_raw = {**weather_raw, "stale": True}
                 sources["swpc_forecast"] = weather_raw
         evidence = [x for x in sources.values() if x]
@@ -167,6 +171,7 @@ def run(request, bundle=None):
                     "stale": sources["swpc_alerts"]["stale"],
                 }
                 for r in warnings
+                if utc(r["published_at"]) <= reference_time
                 if (
                     r["start"]
                     and r["end"]
@@ -247,6 +252,7 @@ def run(request, bundle=None):
             and r["end"]
             and overlap(a, b, utc(r["start"]), utc(r["end"])) > 0
             and not r["stale"]
+            and not r.get("cancelled")
             and "proton" not in r["value"].lower()
             and "radiation" not in r["value"].lower()
         ]

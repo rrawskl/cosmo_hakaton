@@ -864,14 +864,53 @@ export default function Home() {
                         <p>
                           {stamp(w.start)} · {w.duration_minutes / 60} ч
                         </p>
+                        {result.recommendation.best_indices?.includes(i) && (
+                          <p>
+                            {result.recommendation.status === "equal"
+                              ? "Равен остальным по критериям"
+                              : "В группе лучших по критериям"}
+                          </p>
+                        )}
                         {w.factors.map((f) => (
                           <div className="comparefactor" key={f.mechanism}>
                             <span>{mechanisms[f.mechanism]}</span>
                             <Badge status={f.status} />
                             <small>
-                              adverse: {f.adverse_minutes} мин · attention:{" "}
+                              Неблагоприятные условия: {f.adverse_minutes} мин ·
+                              применимость условий внимания:{" "}
                               {f.attention_minutes} мин
                             </small>
+                            {f.mechanism !== "illumination" &&
+                              [
+                                "Kp",
+                                "R1_R2_probability",
+                                "R3_probability",
+                                "S1_probability",
+                              ].map((metric) => {
+                                const values = f.facts
+                                  .filter(
+                                    (x) =>
+                                      x.metric === metric &&
+                                      x.kind === "forecast",
+                                  )
+                                  .map((x) => Number(x.value))
+                                  .filter(Number.isFinite);
+                                const names: Record<string, string> = {
+                                  Kp: "Kp",
+                                  R1_R2_probability: "R1–R2",
+                                  R3_probability: "R3+",
+                                  S1_probability: "S1+",
+                                };
+                                return values.length ? (
+                                  <small key={metric}>
+                                    {names[metric]}: {Math.min(...values)}–
+                                    {Math.max(...values)}
+                                    {metric === "Kp"
+                                      ? " · прогноз, шаг 3 ч"
+                                      : "% · суточный прогноз"}
+                                  </small>
+                                ) : null;
+                              })}
                           </div>
                         ))}
                       </button>

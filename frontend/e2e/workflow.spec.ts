@@ -28,6 +28,9 @@ test("historical replay, evidence, saved JSON and responsive layout", async ({
     .getByRole("button", { name: "Сравнение окон", exact: true })
     .click();
   await expect(page.locator(".windowcard")).toHaveCount(3);
+  await expect(page.locator(".windowcard").first()).toContainText("Kp:");
+  await expect(page.locator(".windowcard").first()).toContainText("S1+:");
+  await page.screenshot({ path: "test-results/comparison.png", fullPage: true });
   await page
     .getByRole("button", { name: "Доказательства", exact: true })
     .click();

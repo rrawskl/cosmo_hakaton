@@ -216,7 +216,12 @@ def window_factor(
         text = str(alert.get("value", "")).lower()
         if "proton" not in text and "radiation" not in text:
             continue
-        if alert.get("stale") or not alert.get("start") or not alert.get("end"):
+        if (
+            alert.get("stale")
+            or alert.get("cancelled")
+            or not alert.get("start")
+            or not alert.get("end")
+        ):
             continue
         if cutoff and (
             not alert.get("published_at") or utc(alert["published_at"]) > cutoff

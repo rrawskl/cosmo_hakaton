@@ -99,6 +99,12 @@ export type Result = {
   recommendation: {
     status: string;
     winner: number | null;
+    best_indices?: number[];
+    comparison_scores?: {
+      has_adverse: boolean;
+      adverse_factor_minutes: number;
+      attention_factor_minutes: number;
+    }[];
     reason: string;
     window_status?: string;
     confidence?: string;

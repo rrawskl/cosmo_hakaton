@@ -3,7 +3,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from .schemas import utc
 
-PARSER_VERSION = "2.0.0"
+PARSER_VERSION = "2.2.0"
 
 
 def parse_forecast(text):
@@ -29,9 +29,16 @@ def parse_forecast(text):
     for line in text.splitlines():
         row = re.match(r"^(\d{2})-(\d{2})UT\s+(.+)", line)
         if row:
-            values = re.findall(r"\d+(?:\.\d+)?", re.sub(r"\(G\d\)", "", row[3]))
+            values = re.sub(r"\(G\d\)", "", row[3]).split()
             if len(values) != 3 or len(days) != 3:
                 raise ValueError("Неполная таблица Kp")
+            if (
+                int(row[1]) not in range(0, 24, 3)
+                or int(row[2]) != (int(row[1]) + 3) % 24
+            ):
+                raise ValueError("Неверный трёхчасовой интервал Kp")
+            if any(not 0 <= float(value) <= 9 for value in values):
+                raise ValueError("Kp вне диапазона 0–9")
             for date, value in zip(days, values):
                 begin = date + timedelta(hours=int(row[1]))
                 records.append(
@@ -51,9 +58,12 @@ def parse_forecast(text):
         ("R3 or greater", "R3_probability"),
     ]:
         row = re.search(r"^" + re.escape(label) + r"\s+([^\n]+)", text, re.M)
-        values = re.findall(r"(\d+)%", row[1]) if row else []
-        if len(values) != 3:
+        values = row[1].split() if row else []
+        if len(values) != 3 or any(not re.fullmatch(r"\d+%", v) for v in values):
             raise ValueError(f"Неполная таблица {metric}")
+        values = [int(v[:-1]) for v in values]
+        if any(v > 100 for v in values):
+            raise ValueError("Вероятность вне диапазона 0–100")
         for date, value in zip(days, values):
             records.append(
                 dict(
@@ -68,6 +78,8 @@ def parse_forecast(text):
             )
     if len(records) != 33:
         raise ValueError("Неполный выпуск")
+    if len({(r["metric"], r["start"]) for r in records}) != 33:
+        raise ValueError("Повторные интервалы прогноза")
     return records
 
 
@@ -199,10 +211,15 @@ def parse_alerts(text):
             published_at=issued,
             kind="forecast" if "WARNING:" in message else "observation",
             start=date_field(message, "Valid From"),
-            end=date_field(message, "(?:Now )?Valid Until"),
+            end=date_field(message, "(?:Now )?Valid (?:Until|To)"),
             value=message,
             unit="message",
             original=row,
+            cancelled=bool(
+                re.search(
+                    r"\b(?:CANCEL|CANCELLED|CANCELED|CANCELLATION)\b", message, re.I
+                )
+            ),
         )
         if key not in latest or issued > latest[key]["published_at"]:
             latest[key] = record

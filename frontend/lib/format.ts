@@ -14,6 +14,7 @@ export const labels: Record<string, string> = {
   partial: "Частичный результат",
   complete: "Расчёт завершён",
   equal: "Варианты равнозначны",
+  tied_best: "Несколько лучших вариантов",
   preferred: "Предпочтительный вариант",
 };
 export const mechanisms: Record<string, string> = {

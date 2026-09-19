@@ -1,7 +1,22 @@
 def recommend(windows, current_protons=None):
+    if not windows:
+        return dict(
+            status="insufficient_data",
+            winner=None,
+            best_indices=[],
+            reason="Нет окон для оценки.",
+        )
     critical = {"space_weather", "protons"}
     labels = {"space_weather": "Космическая погода", "protons": "Протонная обстановка"}
-    initial = [f for f in windows[0]["factors"] if f["mechanism"] in critical]
+
+    def critical_factors(window):
+        by_name = {f["mechanism"]: f for f in window["factors"]}
+        return [
+            by_name.get(name, dict(mechanism=name, status="insufficient_data"))
+            for name in sorted(critical)
+        ]
+
+    initial = critical_factors(windows[0])
     known = [f for f in initial if f["status"] != "insufficient_data"]
     summary = dict(
         window_status="adverse"
@@ -23,10 +38,7 @@ def recommend(windows, current_protons=None):
         else None,
     )
     if any(
-        any(
-            f["mechanism"] in critical and f["status"] == "insufficient_data"
-            for f in w["factors"]
-        )
+        any(f["status"] == "insufficient_data" for f in critical_factors(w))
         for w in windows
     ):
         summary["confidence"] = "limited"
@@ -35,6 +47,7 @@ def recommend(windows, current_protons=None):
             if known or summary["current_proton_status"]
             else "insufficient_data",
             winner=None,
+            best_indices=[],
             reason="Космическая погода или протонный прогноз неполны хотя бы для одного окна. Уверенный выбор невозможен; доступные воздействия показаны в сравнении.",
             **summary,
         )
@@ -43,6 +56,7 @@ def recommend(windows, current_protons=None):
         return dict(
             status="single_window",
             winner=None,
+            best_indices=[0],
             reason="Исходное окно оценено. Для сравнения альтернатив увеличьте горизонт поиска.",
             **summary,
         )
@@ -58,11 +72,26 @@ def recommend(windows, current_protons=None):
     scores = [score(w) for w in windows]
     best = min(scores)
     indices = [i for i, s in enumerate(scores) if s == best]
+    summary["best_indices"] = indices
+    summary["comparison_scores"] = [
+        dict(
+            has_adverse=bool(s[0]),
+            adverse_factor_minutes=s[1],
+            attention_factor_minutes=s[2],
+        )
+        for s in scores
+    ]
     if len(indices) > 1:
         return dict(
-            status="equal",
+            status="equal" if len(indices) == len(windows) else "tied_best",
             winner=None,
-            reason="Варианты равнозначны по доступным данным и правилам; искусственный победитель не выбран.",
+            reason=(
+                "Все окна равны по критериям сравнения. Это не означает одинаковые значения прогнозов или отсутствие риска. Суточные вероятности не определяют время события внутри суток."
+                if len(indices) == len(windows)
+                else "Окна "
+                + ", ".join(str(i + 1) for i in indices)
+                + " разделяют лучший результат; остальные хуже по критериям сравнения. Единственного победителя нет."
+            ),
             **summary,
         )
     i = indices[0]

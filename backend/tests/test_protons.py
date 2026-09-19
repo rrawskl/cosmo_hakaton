@@ -288,6 +288,31 @@ def test_no_double_count_s1():
     assert all(f["metric"] != "S1_probability" for f in result["facts"])
 
 
+def test_cancelled_proton_warning_does_not_trigger_attention():
+    forecast = [
+        dict(
+            metric="S1_probability",
+            value=0,
+            unit="%",
+            start=AT.isoformat(),
+            end=(AT + timedelta(days=1)).isoformat(),
+            published_at=AT.isoformat(),
+            kind="forecast",
+        )
+    ]
+    warning = dict(
+        event_id="WARPX1",
+        value="CANCEL WARNING: Proton",
+        cancelled=True,
+        start=AT.isoformat(),
+        end=(AT + timedelta(hours=1)).isoformat(),
+    )
+    result = protons.window_factor(
+        None, AT, AT + timedelta(hours=1), forecast_records=forecast, alerts=[warning]
+    )
+    assert result["status"] == "favorable" and result["attention_minutes"] == 0
+
+
 def test_timeout_then_secondary_and_cache(monkeypatch):
     Base.metadata.create_all(engine)
     adapters.init_sources()

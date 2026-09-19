@@ -9,7 +9,13 @@ def synthetic_window(status, minutes=0):
                 status=status,
                 adverse_minutes=minutes,
                 attention_minutes=0,
-            )
+            ),
+            dict(
+                mechanism="protons",
+                status="favorable",
+                adverse_minutes=0,
+                attention_minutes=0,
+            ),
         ]
     }
 
@@ -88,9 +94,46 @@ def test_partial_result_reports_available_factor_without_picking_winner():
 
 
 def test_current_observation_does_not_claim_future_is_safe():
+    missing = synthetic_window("insufficient_data")
+    missing["factors"][1]["status"] = "insufficient_data"
     result = recommend(
-        [synthetic_window("insufficient_data")] * 2,
+        [missing] * 2,
         {"status": "OK", "internal_status": "NORMAL"},
     )
     assert result["status"] == "partial_assessment"
     assert result["window_status"] == "unknown" and result["winner"] is None
+
+
+def test_two_best_are_not_all_equal():
+    result = recommend(
+        [
+            synthetic_window("favorable"),
+            synthetic_window("favorable"),
+            synthetic_window("adverse", 60),
+        ]
+    )
+    assert result["status"] == "tied_best"
+    assert result["best_indices"] == [0, 1] and result["winner"] is None
+    assert result["comparison_scores"][2]["adverse_factor_minutes"] == 60
+
+
+def test_missing_mechanism_is_not_complete():
+    w = synthetic_window("favorable")
+    w["factors"].pop()
+    result = recommend([w, w])
+    assert result["status"] == "partial_assessment"
+    assert result["window_status"] == "unknown"
+    assert result["missing_factors"] == ["Протонная обстановка"]
+
+
+def test_empty_windows_are_not_favorable():
+    assert recommend([])["status"] == "insufficient_data"
+
+
+def test_less_attention_selects_unique_winner():
+    windows = [synthetic_window("attention") for _ in range(3)]
+    for w, minutes in zip(windows, [60, 30, 90]):
+        w["factors"][0]["attention_minutes"] = minutes
+    result = recommend(windows)
+    assert result["status"] == "preferred"
+    assert result["winner"] == 1 and result["best_indices"] == [1]

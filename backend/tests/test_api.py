@@ -14,6 +14,40 @@ from backend.app.storage import Base, engine
 FIX = Path(__file__).parent / "fixtures"
 
 
+def test_future_issued_forecast_cannot_cover_window(client, monkeypatch):
+    from backend.app import analysis, protons
+
+    monkeypatch.setattr(analysis, "now", lambda: "2024-05-10T12:29:00Z")
+    forecast = adapters.store_response(
+        "swpc_forecast",
+        adapters.CATALOG["swpc_forecast"]["url"],
+        (FIX / "storm.txt").read_text(),
+    )
+    monkeypatch.setattr(
+        adapters,
+        "current_sources",
+        lambda: dict(
+            swpc_forecast=forecast,
+            celestrak_gp=None,
+            swpc_scales=None,
+            swpc_alerts=None,
+        ),
+    )
+    monkeypatch.setattr(adapters, "current_orbit", lambda *args: None)
+    monkeypatch.setattr(protons, "load", lambda **kw: (None, None))
+    result = client.post(
+        "/analysis",
+        json=dict(
+            mode="current",
+            start_utc="2024-05-10T13:00:00Z",
+            duration_minutes=60,
+            search_horizon_minutes=60,
+        ),
+    ).json()
+    assert result["recommendation"]["status"] == "insufficient_data"
+    assert result["recommendation"]["best_indices"] == []
+
+
 @pytest.fixture
 def client(monkeypatch):
     Base.metadata.create_all(engine)

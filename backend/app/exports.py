@@ -64,6 +64,16 @@ def report(result):
     p("Рекомендация", "HeadingRU")
     p(result["recommendation"]["reason"])
     p("Статус: " + result["recommendation"]["status"])
+    if result["recommendation"].get("best_indices"):
+        p(
+            "Лучшие по критериям окна: "
+            + ", ".join(str(i + 1) for i in result["recommendation"]["best_indices"])
+        )
+    for i, score in enumerate(result["recommendation"].get("comparison_scores", [])):
+        p(
+            f"Окно {i + 1}, критерии сравнения (фактор-минуты, не вероятность риска): "
+            + json.dumps(score, ensure_ascii=False)
+        )
     if result["recommendation"].get("window_status"):
         p("Исходное окно: " + result["recommendation"]["window_status"])
         p("Уверенность: " + result["recommendation"]["confidence"])
